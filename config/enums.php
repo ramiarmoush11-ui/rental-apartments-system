@@ -106,9 +106,5 @@ class CityEnum
         ];
     }
 
-    // public static function getPlaces(string $city): array
-    // {
-    //     $places = self::places();
-    //     return $places[$city] ?? [];
-    // }
+    
 }

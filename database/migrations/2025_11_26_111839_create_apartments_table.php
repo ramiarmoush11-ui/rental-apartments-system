@@ -14,8 +14,9 @@ return new class extends Migration
     {
         Schema::create('apartments', function (Blueprint $table) {
             $table->id();
-            $table->enum('enCity', ['bashr']);
-            $table->enum('enState', ['alasad']);
+            $table->enum('enCity', ['']);
+            $table->enum('enState', ['']);
+            $table->
             $table->timestamps();
         });
     }
