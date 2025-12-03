@@ -14,9 +14,12 @@ return new class extends Migration
     {
         Schema::create('apartments', function (Blueprint $table) {
             $table->id();
-            $table->enum('enCity', ['']);
-            $table->enum('enState', ['']);
-            $table->
+            $table->string('enCity');
+            $table->string('enState');
+            $table->float('price');
+            $table->float('area');
+            $table->float('floor');
+            $table->float('rate')->nullable();
             $table->timestamps();
         });
     }

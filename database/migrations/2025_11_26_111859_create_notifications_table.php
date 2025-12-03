@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->string('type'); //it should be enum ...(to do ) 
+            //[[i dont think so string not bad because of the user dose not have any permintion to send any noti]]
+            $table->json('data');
+            $table->boolean('seen')->default(false);
             $table->timestamps();
         });
     }

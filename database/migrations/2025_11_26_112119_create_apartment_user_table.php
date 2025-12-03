@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('apartment_id')->nullable()->constrained('apartments')->nullOnDelete();
             $table->enum('enType', ['Owner', 'Renter']);
-            $table->enum('enStatus', ['Pending', 'Cancled', 'Accepted'])->default('Pending');
-            $table->float('rate')->default(0.0);
+            $table->enum('enStatus', ['Pending', 'Cancled', 'Accepted', 'AwaitingPayment'])->nullable();
+            $table->float('rate')->nullable();
             $table->date('startTerm')->nullable();
             $table->date('endTerm')->nullable();
             $table->timestamps();
