@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\FilterApartmentsRequest;
 use App\Http\Requests\offerApartmentRequest;
+use App\Http\Requests\PaymentRequest;
 use App\Http\Requests\StoreApartmentRequest;
+use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\UpdateApartmentRequest;
 use App\Models\Apartment;
 use App\Models\ApartmentUser;
 use App\Models\Notification;
+use App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -71,6 +74,12 @@ class ApartmentController extends Controller
                 'message' => 'apartment deleted failed'
             ], 404);
         }
+        if (!$this->ConflictCheck($apartmentId)) {
+            return response()->json([
+                'message' => 'You cannot delete this apartment because it has an active reservation.'
+            ], 409);
+        }
+        $this->ConflictResolve($apartmentId);
         $apartment = Apartment::find($apartmentId);
         if (!$apartment) {
             return response()->json([
@@ -104,17 +113,21 @@ class ApartmentController extends Controller
             ]);
         }
         //paying deposit 10% fome total price
-        $deposit = $this->calculateDeposit($apartment->price);
-        if (!($this->cardStatus($request->input('cardNumber'), $deposit))) {
+        $start = Carbon::parse($validated['startTerm']);
+        $end   = Carbon::parse($validated['endTerm']);
+        $totalNights = $end->diffInDays($start) + 1;
+        //تم زيادة واحد  لانه هاد التابع لا يحسب اليوم الأخير 
+        $totalPrice = $totalNights * $apartment->price;
+        $deposit = $this->calculateDeposit($totalPrice);
+        if (!($this->cardStatus($validated['cardNumber'], $deposit, $validated['cvv']))) {
             return response()->json([
                 'message' => 'Payment failed',
                 'details' => 'Either the card number is invalid or the card does not have sufficient funds'
             ], 402);
         }
 
-        $this->depositPayment($request->input('cardNumber'), $apartment->price);
-
-        $apartment->users()->syncWithoutDetaching([
+        $this->completePayment($validated['cardNumber'], $deposit);
+        /*  $Result = $apartment->users()->syncWithoutDetaching([
             Auth::id() =>
             [
                 'enType'    => 'Renter',
@@ -123,18 +136,38 @@ class ApartmentController extends Controller
                 'startTerm' => $validated['startTerm'],
                 'endTerm'   => $validated['endTerm'],
             ]
+        ]);*/
+        $apartmentUser = ApartmentUser::create([
+            'user_id' => Auth::id(),
+            'apartment_id' => $apartment->id,
+            'enType' => 'Renter',
+            'enStatus' => 'Pending',
+            'rate' => null,
+            'startTerm' => $validated['startTerm'],
+            'endTerm' => $validated['endTerm'],
         ]);
 
+        Payment::create([
+            'user_id' => Auth::id(),
+            'booking_id'  => $apartmentUser->id,
+            'amount' => $deposit,
+            'cardNumber'  => $validated['cardNumber'],
+        ]);
 
-        $owner = $this->getApartmentOwner($apartmentId);
-        $owner_id = $owner->user_id;;
+        $owner = $this->getApartmentOwner($apartment->id);
+        if (!$owner) {
+            return response()->json([
+                'message' => 'Failed to process the reservation offer for this apartment.'
+            ]);
+        }
+        $owner_id = $owner->user_id;
 
         Notification::create([
             'user_id' => $owner_id,
             'type'    => 'reservation_offer',
             'data'    => [
                 'title'        => "New offer to your apartment",
-                'apartment_id' => $apartmentId,
+                'apartment_id' => $apartment->id,
                 'user_id'      => Auth::id(),
                 'startTerm'    => $validated['startTerm'],
                 'endTerm'      => $validated['endTerm'],
@@ -147,7 +180,7 @@ class ApartmentController extends Controller
             'data'    => [
                 'title'        => "Your offer has been submitted successfully.
          Please wait for the owner's approval.",
-                'apartment_id' => $apartmentId,
+                'apartment_id' => $apartment->id,
                 'startTerm'    => $validated['startTerm'],
                 'endTerm'      => $validated['endTerm'],
             ],
@@ -162,16 +195,28 @@ class ApartmentController extends Controller
     //التقييم لازم يكون rate + comment 
     public function EvaluateApartment(int $apartmentId, int $rate)
     {
+        $apartment = Apartment::where('id', $apartmentId)->first();
+        if (!$apartment) {
+            return response()->json([
+                'message' => 'Apartment not found.'
+            ], 404);
+        }
         $apartmentuser = ApartmentUser::where('user_id', Auth::id())
             ->where('apartment_id', $apartmentId)
             ->where('enType', 'Renter')
             ->where('enStatus', 'Accepted')->first();
-
+        if (!$apartmentuser) {
+            return response()->json([
+                'message' => 'You do not have an accepted reservation for this apartment.'
+            ], 403);
+        }
         if ($rate < 0 || $rate > 5) {
             return response()->json(['message' => 'please enter an active vlaue'], 203);
         }
-
-        $mid_date = (Carbon::parse($apartmentuser['startTerm'])->startOfDay())->average(Carbon::parse($apartmentuser['endTerm'])->endOfDay());
+        
+        $mid_date = $this->midDate($apartmentuser['startTerm'], $apartmentuser['endTerm']);
+        //تابع نحنا ساويناه بدل الموجود سابقا لانه هاد ادق وبالثواني هدلاك اذا مفرد مو زابط
+        //$mid_date = (Carbon::parse($apartmentuser['startTerm'])->startOfDay())->average(Carbon::parse($apartmentuser['endTerm'])->endOfDay());
 
         if (!($mid_date->lt(now()))) {
             return response()->json(
@@ -201,13 +246,123 @@ class ApartmentController extends Controller
         return response()->json(['mes' => "EvaluateApartment has been successfully ", 'data' => null]);
     }
     //helper
+    public function ConflictCheck($apartmentId)
+    {
+        $Accepted_offers = ApartmentUser::where('apartment_id', $apartmentId)
+            ->where('enType', 'Renter')->where('enStatus', "Accepted")->orderBy('startTerm', 'asc')->get();
+        $now = Carbon::now();
+        foreach ($Accepted_offers as $offer) {
+            $start = Carbon::parse($offer->startTerm)->startOfDay();
+            $end   = Carbon::parse($offer->endTerm)->endOfDay();
+            if ($end->lt($now)) {
+                continue;
+            }
+            if ($now->between($start, $end, true)) {
+                //current
+                return false;
+            }
+        }
+        return true;
+    }
+    //helper
+    public function ConflictResolve($apartmentId)
+    {
+        $Accepted_offers = ApartmentUser::where('apartment_id', $apartmentId)->where('enType', 'Renter')->where('enStatus', "Accepted")->orderBy('startTerm', 'asc')->get();
+        $pending_AwaitingPayment_offers = ApartmentUser::where('apartment_id', $apartmentId)->where('enType', 'Renter')->whereIn('enStatus', ["AwaitingPayment", "Pending"])->orderBy('startTerm', 'asc')->get();
+        for ($i = 0; $i < count($pending_AwaitingPayment_offers); $i++) {
+            $totalPrice = $this->TotalPriceReservation($pending_AwaitingPayment_offers[$i]->apartment_id, $pending_AwaitingPayment_offers[$i]->startTerm, $pending_AwaitingPayment_offers[$i]->endTerm);
+            if ($totalPrice === null) {
+                return response()->json([
+                    'message' => 'Invalid reservation period or apartment not found.'
+                ], 422);
+            }
+            $deposit = $this->calculateDeposit($totalPrice);
+            $this->cancelReservation($pending_AwaitingPayment_offers[$i], $deposit);
+        }
+
+        $now = Carbon::now();
+        foreach ($Accepted_offers as $offer) {
+            $start = Carbon::parse($offer->startTerm)->startOfDay();
+            $end   = Carbon::parse($offer->endTerm)->endOfDay();
+
+            if ($end->lt($now)) {
+                //past
+                continue;
+            }
+
+            $threshold = $start->copy()->subDays(3); //ساوينا له نسخ مشان ما يغير المتغير الأصلي start
+
+            if ($now->between($threshold, $start, true) && $now->lt($start)) {
+                //within_three_days
+                $totalPrice = $this->TotalPriceReservation($offer->apartment_id, $offer->startTerm, $offer->endTerm);
+                $this->cancelReservation($offer, $totalPrice);
+                $bannedCheck = $this->banUser(Auth::id(), "cancel Accepted Reservation within last three_days before reservation", 60);
+                if (!$bannedCheck || Auth::user()->ban_type === 'Permanent') {
+                    return response()->json([
+                        'message' => 'The cancellation process could not be completed due to errors.',
+                    ]);
+                }
+                continue;
+            }
+
+            /*if ($now->between($start, $end, true)) {
+            //current
+           
+            continue;
+        }*/
+
+            if ($now->lt($threshold)) {
+                //future
+                $totalPrice = $this->TotalPriceReservation($offer->apartment_id, $offer->startTerm, $offer->endTerm);
+                $this->cancelReservation($offer, $totalPrice);
+                continue;
+            }
+
+            //future
+        }
+    }
+    //helper 
+    public function banUser($userId, string $reason, int $days)
+    {
+        $user = User::find($userId);
+        if (!$user) {
+            return false;
+        }
+        if ($user->ban_count == 2) {
+            $user->update([
+                'isbanned'    => true,
+                'banned_until' => null,
+                'ban_type'    => 'Permanent',
+                'ban_count'    => 3,
+            ]);
+        } else {
+            $user->update([
+                'isbanned'    => true,
+                'banned_until' => now()->addDays($days),
+                'ban_type'    => 'Temporary',
+                'ban_count'    => $user->ban_count + 1,
+            ]);
+        }
+
+
+        $user->ban_reasons_history = array_merge((array)$user->ban_reasons_history, [
+            [
+                'banned_number' => $user->ban_count,
+                'reason' => $reason,
+            ]
+        ]);
+        $user->save();
+
+        return true;
+    }
+    //helper
     public function checkAvailability(string $start, string $end, Apartment $apartment)
     {
         $start_date = Carbon::parse($start)->startOfDay();
         $end_date   = Carbon::parse($end)->endOfDay();
 
         $apartment_user = ApartmentUser::where('enType', 'Renter')
-            ->whereIn('enStatus', ['Accepted', 'Pending'])
+            ->whereIn('enStatus', ['Accepted', 'Pending', 'AwaitingPayment'])
             ->where('apartment_id', '=', $apartment->id)->orderBy('startTerm', 'asc')->get();
 
         if ($apartment_user->isEmpty()) {
@@ -247,13 +402,66 @@ class ApartmentController extends Controller
     // for the owner
     public function Show_Reservations(int $apartmentId)
     {
-        // $apartment = Apartment::where('id', '=', $apartmentId)->first();
-
+        $apartment = Apartment::where('id', '=', $apartmentId)->first();
+        if(!$apartment){
+       return response()->json([
+            'message' => "apartment not found "
+        ]);
+        }
         $reservationsOnApartment =  ApartmentUser::where('apartment_id', $apartmentId)
             ->orderBy('startTerm', 'asc')->get();
+            if($reservationsOnApartment->isEmpty()){
+                   return response()->json([
+            'message' => "No reservations found for this apartment"
+        ]);
+            }
         return response()->json([
             'message' => null,
             'data' => $reservationsOnApartment
+        ]);
+    }
+    public function ShowAllReservationsHistory()
+    {
+        
+        $Owned_apartments = ApartmentUser::where('user_id', Auth::id())->where('enType', 'Owner');
+        $Owned_apartments_Ids = $Owned_apartments->pluck('apartment_id');
+        $reservationsOnApartments = ApartmentUser::whereIn('apartment_id', $Owned_apartments_Ids)
+            ->orderBy('startTerm', 'asc')->get();
+        return response()->json([
+            'message' => null,
+            'data' => $reservationsOnApartments
+        ]);
+    }
+    //owner
+    public function ShowAllPendingReservations()
+    {
+        $Owned_apartments = ApartmentUser::where('user_id', Auth::id())->where('enType', 'Owner')->get();
+        $Owned_apartments_Ids = $Owned_apartments->pluck('apartment_id');
+        $reservationsOnApartments = ApartmentUser::whereIN('apartment_id', $Owned_apartments_Ids)->where('enStatus', 'Pending')->where('enType', 'Renter')->orderBy('startTerm', 'asc')->get();
+        if ($reservationsOnApartments->isEmpty()) {
+            return response()->json([
+                'message' => "there is no Pending Reservations yet",
+                'data' => null
+            ]);
+        }
+        return response()->json([
+            'message' => null,
+            'data' => $reservationsOnApartments
+        ]);
+    }
+    public function ShowOnePendingReservations($ApartmentUserID)
+    {
+        $PendingReservations = ApartmentUser::where('id', $ApartmentUserID)->first();
+        if (!$PendingReservations) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+        $owner = $this->getApartmentOwner($PendingReservations['apartment_id']);
+        if ($owner && $owner['user_id'] != Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        return response()->json([
+            'message' => null,
+            'data' => $PendingReservations
         ]);
     }
     //renter
@@ -282,6 +490,7 @@ class ApartmentController extends Controller
     //helper
     public function totalRateAccount(int $apartmentId)
     {
+
         $reservationsOnApartment = ApartmentUser::where('apartment_id', $apartmentId)
             ->where('enType', 'Renter')
             ->where('enStatus', 'Accepted')->get();
@@ -291,11 +500,18 @@ class ApartmentController extends Controller
         }
 
         $sum = 0;
+        $numbersOfRates = 0; //بدنا بس يلي مقيمين ما بدنا الnull يلي لسى مو مقيمين ينحسبوا 
         for ($i = 0; $i < count($reservationsOnApartment); $i++) {
+            if ($reservationsOnApartment[$i]->rate === null) {
+                continue;
+            }
+            $numbersOfRates++;
             $sum = $sum + $reservationsOnApartment[$i]->rate;
         }
-
-        $avg = $sum / count($reservationsOnApartment);
+        if ($numbersOfRates == 0) {
+            return 0;
+        }
+        $avg = $sum / $numbersOfRates;
         return $avg;
     }
     //renter
@@ -311,20 +527,31 @@ class ApartmentController extends Controller
             $query->where('enState', $request->enState);
         }
 
-        if ($request->has('minPrice') && $request->has('maxPrice')) {
-            $query->whereBetween('price', [$request->minPrice, $request->maxPrice]);
+        if ($request->has('minPrice')) {
+            $query->where('price', '>=', $request->minPrice);
         }
 
-        if ($request->has('minArea') && $request->has('maxArea')) {
-            $query->whereBetween('area', [$request->minArea, $request->maxArea]);
+        if ($request->has('maxPrice')) {
+            $query->where('price', '<=', $request->maxPrice);
+        }
+
+        if ($request->has('minArea')) {
+            $query->where('area', '>=', $request->minArea);
+        }
+        if ($request->has('maxArea')) {
+            $query->where('area', '<=', $request->maxArea);
         }
 
         if ($request->has('floor')) {
             $query->where('floor', $request->floor);
         }
 
-        if ($request->has('minRate') && $request->has('maxRate')) {
-            $query->whereBetween('rate', [$request->minRate, $request->maxRate]);
+        if ($request->has('minRate')) {
+            $query->where('rate', '>=', $request->minRate);
+        }
+
+        if ($request->has('maxRate')) {
+            $query->where('rate', '<=', $request->maxRate);
         }
 
         if ($request->has('order')) {
@@ -343,26 +570,30 @@ class ApartmentController extends Controller
         ], 200);
     }
     //owner   approveReservation
-    public function markReservationAwaitingPayment($userId, $apartmentId)
+    public function markReservationAwaitingPayment($ApartmentUserID)
     {
-        $apartment_user = ApartmentUser::where('user_id', $userId)
-            ->where('apartment_id', $apartmentId)
-            ->where('enStatus', 'Pending')
-            ->first();
-
-        if (!$apartment_user) {
+        $apartmentuser = ApartmentUser::where('id', $ApartmentUserID)->first();
+        if (!$apartmentuser) {
+            return response()->json(['message' => 'Reservation not found'], 404);
+        }
+        $owner = $this->getApartmentOwner($apartmentuser['apartment_id']);
+        if (!$owner || $owner['user_id'] != Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        if (!$apartmentuser) {
             return response()->json(['message' => 'Approving failed'], 404);
         }
 
-        $apartment_user->update(['enStatus' => 'AwaitingPayment']);
+        $apartmentuser->update(['enStatus' => 'AwaitingPayment']);
 
         Notification::create([
-            'user_id' => $userId,
+            'user_id' => $apartmentuser['user_id'],
             'type'    => 'reservation_needs_payment',
             'data'    => [
                 'title'        => "Your reservation has been approved. 
                 Please complete the payment to finalize.",
-                'apartment_id' => $apartmentId,
+                'apartment_id' => $apartmentuser['apartment_id'],
+                'Reservation' => $apartmentuser
             ],
         ]);
 
@@ -371,12 +602,12 @@ class ApartmentController extends Controller
     //renter
     public function showReservationsAwaitingPayment()
     {
-        $apartments = ApartmentUser::where('user_id', Auth::id())
+        $apartmentuser = ApartmentUser::where('user_id', Auth::id())
             ->where('enType', 'Renter')
             ->where('enStatus', 'AwaitingPayment')
             ->get();
 
-        if ($apartments->isEmpty()) {
+        if ($apartmentuser->isEmpty()) {
             return response()->json([
                 'message' => 'There are no reservations awaiting payment'
             ], 404);
@@ -384,35 +615,45 @@ class ApartmentController extends Controller
 
         return response()->json([
             'message' => 'Reservations awaiting payment retrieved successfully',
-            'apartments'    => $apartments
+            'Reservations_Awaiting_Payment'    => $apartmentuser
         ], 200);
     }
     //renter
     ///$request->input('cardNumber')     // must do paymentRequest validation
-    public function processPayment(Request $request, $apartmentId)
+    public function finalprocessPayment(PaymentRequest $request, $ApartmentUserID)
     {
-        $apartment_user = ApartmentUser::where('user_id', Auth::id())
+        $validatedData = $request->validated();
+        $apartment_user = ApartmentUser::where('id', $ApartmentUserID)
+            ->where('user_id', Auth::id())
             ->where('enType', 'Renter')
             ->where('enStatus', 'AwaitingPayment')
-            ->where('apartmentId', $apartmentId)
             ->first();
 
         if (!$apartment_user) {
             return response()->json(['message' => 'Payment failed. Reservation not found'], 404);
-        }
-        $apartment = Apartment::find($apartmentId);
+        } //apartment
+        // $apartment = Apartment::find($apartment_user['apartment_id']);
+        $apartment = $apartment_user->apartment;
         if (!$apartment) {
             return response()->json(['message' => 'Payment failed. Apartment not found'], 404);
         }
+        $totalPrice = $this->TotalPriceReservation($apartment_user->apartment_id, $apartment_user->startTerm, $apartment_user->endTerm);
 
-        if (!($this->cardStatus($request->input('cardNumber'), $apartment->price))) {
+        if (!($this->cardStatus($validatedData['cardNumber'], $totalPrice * 0.9, $validatedData['cvv']))) {
             return response()->json([
                 'message' => 'Payment failed',
                 'details' => 'Either the card number is invalid or the card does not have sufficient funds'
             ], 402);
         }
 
-        $this->completePayment($request->input('cardNumber'), $apartment->price);
+        $this->completePayment($validatedData['cardNumber'], $totalPrice * 0.9);
+
+        Payment::create([
+            'user_id' => Auth::id(),
+            'booking_id'  => $apartment_user->id,
+            'amount' => $totalPrice * 0.9,
+            'cardnumber'  => $validatedData['cardNumber'],
+        ]);
 
         $apartment_user->update(['enStatus' => 'Accepted']);
 
@@ -421,16 +662,16 @@ class ApartmentController extends Controller
             'type'    => 'payment_completed',
             'data'    => [
                 'title'        => "Payment completed successfully",
-                'apartment_id' => $apartmentId,
+                'apartment_id' => $apartment->id,
             ],
         ]);
-        $owner = $this->getApartmentOwner($apartmentId);
+        $owner = $this->getApartmentOwner($apartment->id);
         Notification::create([
             'user_id' => $owner->user_id,
             'type'    => 'reservation_payment_received',
             'data'    => [
                 'title'        => "The renter has completed the payment for your apartment",
-                'apartment_id' => $apartmentId,
+                'apartment_id' => $apartment->id,
             ],
         ]);
         return response()->json([
@@ -438,7 +679,8 @@ class ApartmentController extends Controller
         ], 200);
     }
     //++ notiii
-    public function updateResrevationStastus($apartmentId)
+    //ما فهمت شو الغاية منها 
+    /* public function updateResrevationStastus($apartmentId)
     {
         //first of all we need to fetch the owner of the apartment becauseof notification
         $apartmentOwner = $this->getApartmentOwner($apartmentId);
@@ -460,79 +702,59 @@ class ApartmentController extends Controller
         } elseif ($status === 'Cancled') {
         }
         ///////////////////////////////////////////////////
-    }
-    //helper 1
-    public function cancelPendingReservation($owner, $apartmentId, $apartment_user)
+    }*/
+    //helper 
+    public function TotalPriceReservation($apartment_id, $start, $end)
     {
-        $apartment = Apartment::find($apartmentId);
-
+        // $apartment_id = $apartment_user['apartment_id'];
+        $apartment = Apartment::where('id', $apartment_id)->first();
         if (!$apartment) {
-            return response()->json(['message' => 'canceling faild'], 403);
+            return null;
+        }
+        $start = Carbon::parse($start)->startOfDay();
+        $end = Carbon::parse($end)->endOfDay();
+        if ($end->lt($start)) {
+            return null;
+        }
+        $totalNights = $end->diffInDays($start) + 1;
+        //تم زيادة واحد  لانه هاد التابع لا يحسب اليوم الأخير 
+        $totalPrice = $totalNights * $apartment->price;
+        return $totalPrice;
+    }
+    public function cancelReservation($apartment_user, $Amount)
+    {
+
+        $Payments = $apartment_user->payments();
+        $cardNumbers = $Payments->pluck('cardNumber'); //هاد التابع بجيب كل ارقام البطاقات بالpayments 
+        $FailRefund = false;
+        for ($i = 0; $i < count($cardNumbers); $i++) {
+            if ($this->cardStatus($cardNumbers[$i], 0, 0, true)) {
+                $FailRefund = true;
+                $this->completePayment($cardNumbers[$i], -1 * $Amount);
+                break;
+            }
+        }
+        if (!$FailRefund) {
+            //نحط اسمه بملف جيسون بحيث تابع اخر يقدر يستعيدهم منه 
         }
 
-        $apartment_user->update(['enStatus' => 'Canceled']);
+        $apartment_user->update(['enStatus' => 'Cancelled']);
 
         Notification::create([
-            'user_id' => $owner->id,
-            'type'    => 'reservation_canceled',
+            'user_id' => $apartment_user['user_id'],
+            'type'    => 'reservation_cancelled',
             'data'    => [
-                'title'        => "Reservation canceled on your apartment",
-                'apartment_id' => $apartmentId,
-                'renter_id'    => $apartment_user->user_id,
-            ],
-        ]);
-
-
-        Notification::create([
-            'user_id' => $apartment_user->user_id,
-            'type'    => 'reservation_canceled',
-            'data'    => [
-                'title'        => "Your reservation has been canceled",
-                'apartment_id' => $apartmentId,
+                'title'        => "Reservation cancelled on your apartment and your paid amount has been refunded ,
+                if you experience any problem in refunding money - pleas check refund_money tab",
+                'apartment_id' => $apartment_user['apartment_id']
             ],
         ]);
 
         return response()->json([
-            'message' => 'Reservaion canceld successfully'
+            'message' => 'Reservaion cancelld successfully'
         ], 200);
     }
-    //helper 2
-    public function cancelAcceptedReservation($owner, $apartmentId, $apartment_user)
-    {
-        $apartment = Apartment::find($apartmentId);
 
-        if (!$apartment) {
-            return response()->json(['message' => 'canceling faild'], 403);
-        }
-        ///////////////////////////////////
-        /**
-         * to do code 
-         */
-        ////////////////////////////////////
-        Notification::create([
-            'user_id' => $owner->user_id,
-            'type'    => 'reservation_canceled',
-            'data'    => [
-                'title'        => "Reservation canceled on your apartment",
-                'apartment_id' => $apartmentId,
-                'renter_id'    => $apartment_user->user_id,
-            ],
-        ]);
-
-
-        Notification::create([
-            'user_id' => $apartment_user->user_id,
-            'type'    => 'reservation_canceled',
-            'data'    => [
-                'title'        => "Your reservation has been canceled",
-                'apartment_id' => $apartmentId,
-            ],
-        ]);
-
-        return response()->json([
-            'message' => 'Reservaion canceld successfully'
-        ], 200);
-    }
     //renter
     public function addApartmentToFavoritesUser($apartmentId)
     {
@@ -583,16 +805,22 @@ class ApartmentController extends Controller
             'favourites' => $favourites
         ], 200);
     }
-    public function cardStatus($cardNumber, $apartmentPrice): bool
+    public function cardStatus($cardNumber, $Amount, $cvv, $checkCvv = false): bool
     {
-        $json = Storage::get('cards.json');
+        // تأكد من وجود ملف البطاقات
+        $path = 'private/cards.json';
+        if (!Storage::exists($path)) {
+            return false;
+        }
+        $json = Storage::get('private/cards.json');
         $cards = json_decode($json, true);
 
         foreach ($cards as $card) {
             if (
                 $cardNumber == $card['card_number'] &&
+                ($cvv == $card['cvv'] || $checkCvv) &&
                 Carbon::now()->lessThanOrEqualTo(Carbon::parse($card['expiry'])) &&
-                $card['balance'] >= $apartmentPrice
+                $card['balance'] >= $Amount
             ) {
                 return true;
             }
@@ -601,21 +829,34 @@ class ApartmentController extends Controller
         return false;
     }
     // $request->input('cardNumber') //helper
-    public function completePayment($cardNumber, $apartmentPrice)
+    public function completePayment($cardNumber, $Amount)
     {
-        $json = Storage::get('cards.json');
+        $json = Storage::get('private/cards.json');
         $cards = json_decode($json, true);
 
         foreach ($cards as &$card) {
             if ($cardNumber == $card['card_number']) {
-                $card['balance'] -= $apartmentPrice * 0.9;
+                $card['balance'] -= $Amount;
+                break;
+            }
+        }
+        Storage::put('private/cards.json', json_encode($cards));
+    }
+    //ما في داعي تابع تاني منقدر نستخدم التابع يلي فوق بس منعكس اشارة الamount 
+    /*  public function refundAmount($cardNumber ,$Amount){
+ $json = Storage::get('cards.json');
+        $cards = json_decode($json, true);
+
+        foreach ($cards as &$card) {
+            if ($cardNumber == $card['card_number']) {
+                $card['balance'] += $Amount;
                 break;
             }
         }
         Storage::put('cards.json', json_encode($cards));
-    }
+    }*/
     //helper
-    public function depositPayment($cardNumber, $apartmentPrice)
+    /* public function depositPayment($cardNumber, $apartmentPrice)
     {
         $json = Storage::get('cards.json');
         $cards = json_decode($json, true);
@@ -627,12 +868,18 @@ class ApartmentController extends Controller
             }
         }
         Storage::put('cards.json', json_encode($cards));
+    }*/
+    //helper
+    public function calculateDeposit($Amount)
+    {
+        return $Amount * 0.1;
     }
     //helper
-    public function calculateDeposit($apartmentPrice)
+    public function calculateRemainingAfterDeposit($Amount)
     {
-        return $apartmentPrice * 0.1;
+        return $Amount * 0.9;
     }
+
     //helper
     public function getApartmentOwner($apartmentId): ?ApartmentUser
     {
@@ -640,5 +887,15 @@ class ApartmentController extends Controller
             ->where('enType', 'Owner')
             ->first();
     }
+    //helper 
+    public function midDate($start, $end): Carbon
+    {
+        $start = Carbon::parse($start)->startOfDay();
+        $end   = Carbon::parse($end)->endOfDay();
 
+        $TermInSeconds = $end->getTimestamp() - $start->getTimestamp();
+        $halfSeconds = (int) floor($TermInSeconds / 2);
+
+        return $start->copy()->addSeconds($halfSeconds);
+    }
 }

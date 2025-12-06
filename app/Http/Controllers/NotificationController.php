@@ -32,9 +32,12 @@ class NotificationController extends Controller
         //ليش ؟ لانو الافضل نبعد عن كلشي استثناءات ونحن نتعامل مع كل المواضيع
         if (!$notification) {
             return response()->json([
-                'message' => 'the notification list is empty.',
+                'message' => 'the notification not found.',
                 'data' => null
-            ], 204); //403 -> 204
+            ], 404); //403 -> 204 //edit number three ^__^ 204->404
         }
+         return response()->json(['mes' => null, 'data' => $notification],200);
+
     }
+    
 }

@@ -14,6 +14,11 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+protected $casts = [
+    'email_verified_at' => 'datetime',
+    'password' => 'hashed',
+    'ban_history' => 'array',
+];
 
     protected $guarded = ['enRole',];
 
@@ -22,14 +27,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
 
     public function apartments()
     {
@@ -50,4 +47,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Apartment::class, 'favourites');
     }
+   public function payments()
+{
+    return $this->hasMany(\App\Models\Payment::class, 'user_id');
+}
+
 }

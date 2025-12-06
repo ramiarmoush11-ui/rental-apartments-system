@@ -30,9 +30,9 @@ class StoreApartmentRequest extends FormRequest
                 [$this, 'validateCity'],
             ],
 
-            'price' => 'required|numeric',
-            'area'  => 'required|numeric',
-            'floor' => 'required|numeric',
+            'price' => 'required|numeric|min:1',
+            'area'  => 'required|numeric|min:1',
+            'floor' => 'required|integer',
         ];
     }
 

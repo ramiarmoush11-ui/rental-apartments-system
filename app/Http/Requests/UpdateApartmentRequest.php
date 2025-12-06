@@ -19,13 +19,14 @@ class UpdateApartmentRequest extends FormRequest
     {
 
         return [
-            'enState' => [
+           /* 'enState' => [
                 'sometimes',
                 'string',
                 [$this, 'validateState'],
-            ],
+            ],*/
+            'enState' =>'prohibited',
 
-            'sometimes' => [
+            'enCity' => [
                 'required',
                 'string',
                 [$this, 'validateCity'],

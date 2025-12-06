@@ -30,4 +30,8 @@ class ApartmentUser extends Pivot
     {
         return $this->belongsTo(User::class);
     }
+    public function payments()
+{
+    return $this->hasMany(Payment::class, 'booking_id');
+}
 }

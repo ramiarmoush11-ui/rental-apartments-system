@@ -20,6 +20,11 @@ return new class extends Migration
             $table->enum('enRole', ['Admin', 'User'])->default('User');
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->boolean('isbanned')->default(0);
+            $table->date('banned_until')->nullable();
+            $table->json('ban_reasons_history')->nullable();
+            $table->enum('ban_type',['Temporary','Permanent'])->nullable();
+           $table->integer('ban_count')->default(0);
             $table->rememberToken();
             $table->timestamps();
         });

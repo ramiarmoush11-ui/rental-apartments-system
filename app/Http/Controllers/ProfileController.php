@@ -46,10 +46,10 @@ class ProfileController extends Controller
             $validatedData['avatar'] = $path;
         }
 
-        if ($request->hasFile('idPhoto')) {
+        /*if ($request->hasFile('idPhoto')) {
             $path = $request->file('idPhoto')->store('users/idPhoto', 'public');
             $validatedData['idPhoto'] = $path;
-        }
+        }*/
 
         $profile->update($validatedData);
 

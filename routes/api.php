@@ -1,65 +1,44 @@
 <?php
 
 use App\Http\Controllers\ApartmentController;
-use App\Http\Controllers\FirstController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
-use Symfony\Component\HttpFoundation\Request;
 
-
+Route::get('/test', function () {
+    return response()->json(['status' => 'ok']);
+});
 Route::post('register', [UserController::class, 'register']);
 Route::post('login', [UserController::class, 'login']);
-Route::post('logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
-
-
-//زبط زكاتك المديل ويرات هون اذا بتقدر تعملهن مجموعات بكون احسن المديل وير تبع الرول انا حاططلها بارمتر
-//->middleware(role:admin)
+Route::prefix('apartments')->controller(ApartmentController::class)->group(function () {
+    Route::get('/', 'showApartments');
+    Route::get('/filter', 'filterApartments');
+    Route::get('/{apartmentId}', 'showApartment');
+});
 Route::middleware('auth:sanctum')->group(function () {
-
-    Route::prefix('user')->group(function () {});
-
-    Route::prefix('apartments')->controller(ApartmentController::class)->group(function () {
-
-        Route::post('/filter', 'filterApartments');
-
-        Route::post('/{apartmentId}/reservations/{userId}/awaiting-payment', 'markReservationAwaitingPayment');
-
-        Route::get('/reservations/awaiting-payment', 'showReservationsAwaitingPayment');
-
-        Route::post('/{apartmentId}/payment', 'processPayment');
-
-        Route::put('/{apartmentId}/reservation-status', 'updateResrevationStastus');
-
-        Route::post('/{apartmentId}/favorites', 'addApartmentToFavoritesUser');
-
-        Route::delete('/{apartmentId}/favorites', 'removeApartmentFromFavoritesUser');
-
-        Route::get('/favorites', 'favourites');
-
-        Route::post('/', 'store');
-
-        Route::put('/{apartmentId}', 'update');
-
-        Route::delete('/{apartmentId}', 'delete');
-
-        Route::post('/{apartmentId}/offer', 'offerApartment');
-
-        Route::post('/{apartmentId}/evaluate/{rate}', 'EvaluateApartment');
-
-        Route::get('/{apartmentId}/reservations', 'Show_Reservations');
-
-        Route::get('/', 'showApartments');
-
-        Route::get('/{apartmentId}', 'showApartment');
-    });
-
+    Route::post('logout', [UserController::class, 'logout']);
     Route::prefix('profile')->controller(ProfileController::class)->group(function () {
         Route::post('/', 'store');
-        Route::put('/', 'update');
+        Route::put('/', 'update')->middleware('notbanned');
     });
-
-    Route::get('showNotification', [NotificationController::class, 'showNotifications']);
-    Route::get('showOneNotification/{id}', [NotificationController::class, 'showNotification']);
-});// sanctun bracket
+    Route::get('notifications', [NotificationController::class, 'showNotifications']);
+    Route::get('notifications/{id}', [NotificationController::class, 'showNotification']);
+    Route::prefix('apartments')->controller(ApartmentController::class)->group(function () {
+        Route::post('/', 'store')->middleware(['notbanned', 'verifiedAccount']);
+        Route::put('/{apartmentId}', 'update')->middleware('notbanned');
+        Route::delete('/{apartmentId}', 'delete')->middleware('notbanned');
+        Route::get('/{apartmentId}/reservations', 'Show_Reservations')->middleware('notbanned');
+        Route::get('/reservations/history', 'ShowAllReservationsHistory');
+        Route::get('/reservations/pending', 'ShowAllPendingReservations')->middleware('notbanned');
+        Route::get('/reservations/{ApartmentUserID}', 'ShowOnePendingReservations')->middleware('notbanned');
+        Route::post('/reservations/{ApartmentUserID}/awaiting-payment', 'markReservationAwaitingPayment')->middleware('notbanned');
+        Route::post('/{apartmentId}/offer', 'offerApartment')->middleware(['notbanned', 'verifiedAccount']);
+        Route::post('/reservations/{ApartmentUserID}/final-payment', 'finalprocessPayment')->middleware(['notbanned', 'verifiedAccount']);
+        Route::get('/reservations/awaiting-payment', 'showReservationsAwaitingPayment')->middleware('notbanned');
+        Route::post('/{apartmentId}/evaluate/{rate}', 'EvaluateApartment')->middleware(['notbanned', 'verifiedAccount']);
+        Route::post('/{apartmentId}/favorites', 'addApartmentToFavoritesUser');
+        Route::delete('/{apartmentId}/favorites', 'removeApartmentFromFavoritesUser');
+        Route::get('/favorites', 'favourites');
+    });
+});

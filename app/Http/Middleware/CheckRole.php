@@ -16,7 +16,7 @@ class CheckRole
      */
     public function handle(Request $request, Closure $next, $role): Response
     {
-        if (Auth::check() && Auth::user()->role === $role) {
+        if (Auth::check() && Auth::user()->enRole === $role) {
             return $next($request);
         }
         return response()->json(['message' => 'Access denied'], 403);
