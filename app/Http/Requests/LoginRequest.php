@@ -12,13 +12,14 @@ class LoginRequest extends FormRequest
         return true;
     }
 
-    
+    // | regex:/^(?:\+9639\d{8}|09\d{8})$/
+    //  | regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/
     public function rules(): array
     {
         return [
             //'email' => 'required | string | email | between:11,255 ',
-            'phone' => 'required | regex:/^(?:\+9639\d{8}|09\d{8})$/',
-            'password' => 'required | string | min: 8  | regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/',
+            'phone' => 'required',
+            'password' => 'required | string | min: 8',
         ];
     }
 }

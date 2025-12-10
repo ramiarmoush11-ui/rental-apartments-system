@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;//ما عاد بدنا ياها 
 
-class ApartmentUser extends Pivot
+class Booking extends Model//pivot -> model 
 {
-    protected $table = 'apartment_user';
+    use HasFactory;
+
+    protected $table = 'bookings';
 
 
     protected $fillable = [
@@ -31,7 +35,7 @@ class ApartmentUser extends Pivot
         return $this->belongsTo(User::class);
     }
     public function payments()
-{
-    return $this->hasMany(Payment::class, 'booking_id');
-}
+    {
+        return $this->hasMany(Payment::class, 'booking_id');
+    }
 }

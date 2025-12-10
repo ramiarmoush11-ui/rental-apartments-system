@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('phone', 15);
+            $table->string('phone', 30);
             $table->boolean('verified')->default(0);
             $table->enum('enRole', ['Admin', 'User'])->default('User');
             $table->timestamp('email_verified_at')->nullable();

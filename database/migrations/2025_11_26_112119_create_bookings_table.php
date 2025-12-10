@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('apartment_user', function (Blueprint $table) {
+        Schema::create('bookings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('apartment_id')->nullable()->constrained('apartments')->nullOnDelete();
             $table->enum('enType', ['Owner', 'Renter']);
-            $table->enum('enStatus', ['Pending', 'Canclled', 'Accepted', 'AwaitingPayment'])->nullable();
+            $table->enum('enStatus', ['Pending', 'Cancelled', 'Accepted', 'AwaitingPayment'])->nullable();//عدل المشروع كامل مع 'Cancelled'
             $table->float('rate')->nullable();
             $table->date('startTerm')->nullable();
             $table->date('endTerm')->nullable();
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('apartment_user');
+        Schema::dropIfExists('bookings');
     }
 };

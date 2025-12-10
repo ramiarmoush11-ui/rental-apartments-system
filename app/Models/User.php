@@ -14,11 +14,11 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-protected $casts = [
-    'email_verified_at' => 'datetime',
-    'password' => 'hashed',
-    'ban_history' => 'array',
-];
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'ban_history' => 'array',
+    ];
 
     protected $guarded = ['enRole',];
 
@@ -28,11 +28,17 @@ protected $casts = [
     ];
 
 
-    public function apartments()
+    // public function apartments()
+    // {
+    //     return $this->BelongsToMany(Apartment::class)->withPivot(['enType', 'enStatus', 'rate', 'startTerm', 'endTerm'])
+    //         ->withTimestamps();
+    // }
+
+    public function bookings()
     {
-        return $this->BelongsToMany(Apartment::class)->withPivot(['enType', 'enStatus', 'rate', 'startTerm', 'endTerm'])
-            ->withTimestamps();
+        return $this->hasMany(Booking::class);
     }
+    
     public function profile()
     {
         return  $this->hasOne(Profile::class);
@@ -47,9 +53,9 @@ protected $casts = [
     {
         return $this->belongsToMany(Apartment::class, 'favourites');
     }
-   public function payments()
-{
-    return $this->hasMany(\App\Models\Payment::class, 'user_id');
-}
 
+    public function payments()
+    {
+        return $this->hasMany(Payment::class); //مافي داعي صرح عن ال user_id
+    }
 }

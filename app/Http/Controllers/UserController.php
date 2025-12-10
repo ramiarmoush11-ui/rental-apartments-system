@@ -14,7 +14,6 @@ class UserController extends Controller
 
     public function register(RegisterRequest $request)
     {
-        dd('inside register');
         $validatedData = $request->validated();
         $validatedData['password'] = Hash::make($validatedData['password']);
         $user = User::create($validatedData);

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/test', function () {
     return response()->json(['status' => 'ok']);
 });
+
 Route::post('register', [UserController::class, 'register']);
 Route::post('login', [UserController::class, 'login']);
 Route::prefix('apartments')->controller(ApartmentController::class)->group(function () {
@@ -16,12 +17,14 @@ Route::prefix('apartments')->controller(ApartmentController::class)->group(funct
     Route::get('/filter', 'filterApartments');
     Route::get('/{apartmentId}', 'showApartment');
 });
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [UserController::class, 'logout']);
     Route::prefix('profile')->controller(ProfileController::class)->group(function () {
         Route::post('/', 'store');
         Route::put('/', 'update')->middleware('notbanned');
     });
+
     Route::get('notifications', [NotificationController::class, 'showNotifications']);
     Route::get('notifications/{id}', [NotificationController::class, 'showNotification']);
     Route::prefix('apartments')->controller(ApartmentController::class)->group(function () {

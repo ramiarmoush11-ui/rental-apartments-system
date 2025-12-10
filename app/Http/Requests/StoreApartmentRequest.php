@@ -33,8 +33,7 @@ class StoreApartmentRequest extends FormRequest
             'price' => 'required|numeric|min:1',
             'area'  => 'required|numeric|min:1',
             'floor' => 'required|integer',
+            'cardNumber' => 'required|numeric|min:1'//new
         ];
     }
-
-  
 }

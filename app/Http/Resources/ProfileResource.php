@@ -7,13 +7,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProfileResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
+
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'firstName' => $this->firstName,
+            'lastName'  => $this->lastName,
+            'avatar'    => $this->avatar,
+            'birthDate' => $this->birthDate->format('Y-m-d'),
+            // ما منعرض idPhoto لأنه حساس ولا شو ؟
+        ];
     }
 }

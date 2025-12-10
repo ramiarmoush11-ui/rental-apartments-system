@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-    //
+    use HasFactory;
 
-     protected $fillable = [
+    protected $fillable = [
         'booking_id',
         'user_id',
         'amount',
@@ -17,11 +18,11 @@ class Payment extends Model
 
     public function booking()
     {
-        return $this->belongsTo(ApartmentUser::class, 'booking_id');
+        return $this->belongsTo(Booking::class, 'booking_id');
     }
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class); //مافي داعي صرح عن ال user_id
     }
 }
