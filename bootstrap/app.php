@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckNotBanned;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\verifiedAccount;
 use Illuminate\Foundation\Application;
@@ -16,7 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => CheckRole::class,
-            'verifiedAccount' => verifiedAccount::class
+            'verifiedAccount' => verifiedAccount::class,
+            'notbanned' => CheckNotBanned::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

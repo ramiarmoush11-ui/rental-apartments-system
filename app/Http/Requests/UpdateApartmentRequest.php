@@ -27,7 +27,7 @@ class UpdateApartmentRequest extends FormRequest
             'enState' =>'prohibited',
 
             'enCity' => [
-                'required',
+                'sometimes',
                 'string',
                 [$this, 'validateCity'],
             ],

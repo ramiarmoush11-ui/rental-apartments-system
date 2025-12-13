@@ -18,7 +18,7 @@ class ApartmentResource extends JsonResource
             'area' => $this->area,
             'floor' => $this->floor,
             'rate' => $this->rate,
-            'created_at' => $this->format('Y-m-d'),
+            'created_at' => $this->created_at->format('Y-m-d'),
         ];
     }
 }

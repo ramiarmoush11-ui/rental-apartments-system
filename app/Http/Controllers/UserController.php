@@ -27,7 +27,14 @@ class UserController extends Controller
     {
         $validatedData = $request->validated();
 
-        if (!Auth::attempt($validatedData)) {
+        $emailORphone = !empty($validatedData['email']) ? 'email' : 'phone'; 
+
+    $Auth_data = [
+        $emailORphone => $validatedData[$emailORphone],
+        'password' => $validatedData['password']
+    ];
+
+        if (!Auth::attempt($Auth_data)) {
             return response()->json('invalied email or password', 401);
         }
 

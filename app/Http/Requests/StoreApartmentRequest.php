@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Traits\ValidatesCityAndState;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Traits\ValidatesCityAndState;
 
 class StoreApartmentRequest extends FormRequest
 {
@@ -16,24 +16,31 @@ class StoreApartmentRequest extends FormRequest
 
     public function rules(): array
     {
-
         return [
             'enState' => [
                 'required',
                 'string',
-                [$this, 'validateState'],
+                function ($attribute, $value, $fail) {
+                    $this->validateState($attribute, $value, $fail);
+                },
             ],
 
             'enCity' => [
                 'required',
                 'string',
-                [$this, 'validateCity'],
+                function ($attribute, $value, $fail) {
+                    $this->validateCity($attribute, $value, $fail);
+                },
             ],
 
             'price' => 'required|numeric|min:1',
             'area'  => 'required|numeric|min:1',
-            'floor' => 'required|integer',
-            'cardNumber' => 'required|numeric|min:1'//new
+            'floor' => 'required|integer|min:0',
+
+            'cardNumber' => [
+                'required',
+                'digits_between:13,19',
+            ],
         ];
     }
 }

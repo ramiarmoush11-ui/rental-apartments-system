@@ -20,6 +20,7 @@ return new class extends Migration
             $table->float('rate')->nullable();
             $table->date('startTerm')->nullable();
             $table->date('endTerm')->nullable();
+            $table->float('priceAtBooking');
             $table->timestamps();
         });
     }

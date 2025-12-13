@@ -24,7 +24,7 @@ class UserResource extends JsonResource
             'Profile'  => new ProfileResource($this->whenLoaded('profile')),
             'Bookings' => BookingResource::collection($this->whenLoaded('bookings')),
             'Payments' => PaymentResource::collection($this->whenLoaded('payments')),
-            'Apartments'=> ApartmentResource::collection($this->whenLoaded('apartments')),
+            //'Apartments'=> ApartmentResource::collection($this->whenLoaded('apartments')),
             'EmailVerifiedAt' => $this->email_verified_at?->format('Y-m-d H:i'),
             'CreatedAt' => $this->created_at->format('Y-m-d'),
         ];

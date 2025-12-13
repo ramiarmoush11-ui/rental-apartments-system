@@ -14,26 +14,38 @@ class FilterApartmentsRequest extends FormRequest
         return true;
     }
 
+public function rules(): array
+{
+    return [
+        'enState' => [
+            'nullable',
+            'string',
+             function ($attribute, $value, $fail) {
+                    $this->validateState($attribute, $value, $fail);
+                }
+        ],
 
-    public function rules(): array
-    {
-        return [
-            'enState' => ['nullable', 'string', [$this, 'validateState']],
-            'enCity'  => ['nullable', 'string', [$this, 'validateCity']],
+        'enCity' => [
+            'nullable',
+            'string',
+            function ($attribute, $value, $fail) {
+                    $this->validateCity($attribute, $value, $fail);
+                }
+        ],
 
-            'minPrice' => 'nullable| numeric|min:0',
-            'maxPrice' => 'nullable| numeric|min:0|gte:minPrice',
+        'minPrice' => 'nullable|numeric|min:0',
+        'maxPrice' => 'nullable|numeric|min:0',
 
-            'minArea' => 'nullable|numeric|min:0',
-            'maxArea' => 'nullable|numeric|min:0|gte:minArea',
+        'minArea' => 'nullable|numeric|min:0',
+        'maxArea' => 'nullable|numeric|min:0',
 
-            'floor' => 'nullable|integer|min:0',
+        'floor' => 'nullable|integer|min:0',
 
-            'minRate' => 'nullable|numeric|min:0|max:5',
-            'maxRate' => 'nullable|numeric|min:0|max:5|gte:minRate',
+        'minRate' => 'nullable|numeric|min:0|max:5',
+        'maxRate' => 'nullable|numeric|min:0|max:5',
 
-            'order' => 'nullable|in:asc,desc',
+        'order' => 'nullable|in:asc,desc',
+    ];
+}
 
-        ];
-    }
 }

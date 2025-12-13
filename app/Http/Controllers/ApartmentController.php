@@ -29,23 +29,41 @@ class ApartmentController extends Controller
     public function store(StoreApartmentRequest $request) //addApartment -> store becauseOf (RESTFUL API)
     {
 
-        $validated = $request->validated();
-        $apartment = Apartment::create($validated);
-        $apartment->users()->syncWithoutDetaching([ //attach --> syncWithoutDetaching
-            Auth::id() => [
+      /*  $validated_data = $request->validated()->only([
+    'enState',
+    'enCity',
+    'price',
+    'area',
+    'floor',
+]);*/
+$validated = $request->validated();
+$validated_data = [
+    'enState' => $validated['enState'],
+    'enCity'  => $validated['enCity'],
+    'price'   => $validated['price'],
+    'area'    => $validated['area'],
+    'floor'   => $validated['floor'],
+];
+$validated_card=['cardNumber'=>$validated['cardNumber']];
+        $apartment = Apartment::create($validated_data);
+        Booking::create(
+          [      'user_id'=>Auth::id(),
+          'apartment_id'=>$apartment->id,
                 'enType'    => 'Owner',
                 'enStatus'  => null,
                 'rate'      => null,
                 'startTerm' => null,
                 'endTerm'   => null,
+                'priceAtBooking'=> $validated['price']
             ]
-        ]);
+        );
+        
         //هون انا عم هيئ كرت واحد عالقليلة 
         Payment::create([
             'user_id' => Auth::id(),
             'booking_id'  => null,
             'amount' => 0.0,
-            'cardNumber'  => $validated['cardNumber'],
+            'cardNumber'  => $validated_card['cardNumber'],
         ]);
         return response()->json([
             'message' => 'apartment added successfully ',
@@ -59,7 +77,7 @@ class ApartmentController extends Controller
             ->where('apartment_id', $apartmentId)->where('enType', 'Owner')->first();
         if (!$apartmentOwner) {
             return response()->json([
-                'message' => 'apartment updated failed'
+                'message' => 'apartment updated failed (poss)'
             ], 404);
         }
 
@@ -71,15 +89,16 @@ class ApartmentController extends Controller
         }
 
         $apartment->update($request->validated());
+         $apartment->save();
         return response()->json([
             'message' => 'apartment updated successfully ',
             'data' => $apartment
         ], 200);
     }
     //owner
-    public function delete($apartmentId)
+    public function delete($apartmentId ,Request $request)
     {
-
+        $delete_verified=$request->boolean('delete_verified');//اذا كان مو مبعوت فلح تعتبر false bec it is null 
         $apartmentOwner = Booking::where('user_id', Auth::id())
             ->where('apartment_id', $apartmentId)->where('enType', 'Owner')->first();
         if (!$apartmentOwner) {
@@ -88,9 +107,9 @@ class ApartmentController extends Controller
             ], 404);
         }
         //// التحذير يلي حيكنا عليه .....هيك ارجل حل بدون تعقيد
-        $ban_count = $apartmentOwner->ban_count;
-        if ($ban_count && $apartmentOwner->enStatus === 'Accepted') {
-            $this->completeTheDeletion($ban_count);
+        $ban_count = Auth::user()->ban_count;
+        if ((!$delete_verified) && (($this->ban_count_ondelete($apartmentId) + $ban_count )>=3) ) {
+            $this->warn_ondelete($ban_count);
         }
 
         if (!$this->ConflictCheck($apartmentId)) {
@@ -123,17 +142,17 @@ class ApartmentController extends Controller
                 'data' => null
             ], 404);
         }
-        $apartments->getCollection()->transform(function ($apartment) {
+     /*   $apartments->getCollection()->transform(function ($apartment) {
             $apartment->rate = $this->totalRateAccount($apartment->id); // انتبه: totalRateAccount يجب أن يرجع قيمة
             return $apartment;
-        });
+        });*/
         return response()->json(['mes' => null, 'data' => $apartments]);
     }
     //renter
     public function showApartment($apartmentId)
     {
         $apartment = Apartment::where('id', $apartmentId)->first();
-        $apartment['rate'] = $this->totalRateAccount($apartmentId);
+        //$apartment['rate'] = $this->totalRateAccount($apartmentId);
         return response()->json(['message' => null, 'data' => $apartment]);
     }
 
@@ -142,42 +161,42 @@ class ApartmentController extends Controller
     {
         $query = Apartment::query();
 
-        if ($request->has('enCity')) {
+        if ($request->filled('enCity')) {
             $query->where('enCity', $request->enCity);
         }
 
-        if ($request->has('enState')) {
+        if ($request->filled('enState')) {
             $query->where('enState', $request->enState);
         }
 
-        if ($request->has('minPrice')) {
+        if ($request->filled('minPrice')) {
             $query->where('price', '>=', $request->minPrice);
         }
 
-        if ($request->has('maxPrice')) {
+        if ($request->filled('maxPrice')) {
             $query->where('price', '<=', $request->maxPrice);
         }
 
-        if ($request->has('minArea')) {
+        if ($request->filled('minArea')) {
             $query->where('area', '>=', $request->minArea);
         }
-        if ($request->has('maxArea')) {
+        if ($request->filled('maxArea')) {
             $query->where('area', '<=', $request->maxArea);
         }
 
-        if ($request->has('floor')) {
+        if ($request->filled('floor')) {
             $query->where('floor', $request->floor);
         }
 
-        if ($request->has('minRate')) {
+        if ($request->filled('minRate')) {
             $query->where('rate', '>=', $request->minRate);
         }
 
-        if ($request->has('maxRate')) {
+        if ($request->filled('maxRate')) {
             $query->where('rate', '<=', $request->maxRate);
         }
 
-        if ($request->has('order')) {
+        if ($request->filled('order')) {
             if ($request->input('order') == 'asc') {
                 $query->orderBy('price', 'asc');
             } else {

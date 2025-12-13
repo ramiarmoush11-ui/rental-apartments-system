@@ -21,47 +21,46 @@ trait PaymentProcessingTrait
     {
         $Refund1 = false;
         $Refund2 = false;
-
+        $validated_card1 = null;
+        $validated_card2 = null;
+        for ($i = 0; $i < count($ownerCardsNumber); $i++) {
+            if ($this->cardStatus($ownerCardsNumber[$i], $amount, 0, true)) {
+                $Refund2 = true;
+                $validated_card2 = $ownerCardsNumber[$i];
+                break;
+            }
+        }
+        if (!$Refund2) {
+            return false;
+        }
         for ($i = 0; $i < count($userCardNumbers); $i++) {
             if ($this->cardStatus($userCardNumbers[$i], 0, 0, true)) {
                 $Refund1 = true;
-                $this->completePayment($userCardNumbers[$i], -1 * $amount);
+                $validated_card1 = $userCardNumbers[$i];
                 break;
             }
         }
-
-        for ($i = 0; $i < count($ownerCardsNumber); $i++) {
-            if ($this->cardStatus($ownerCardsNumber[$i], 0, 0, true)) {
-                $Refund2 = true;
-                $this->completePayment($ownerCardsNumber[$i], $amount);
-                break;
-            }
+        if ($Refund2 && $Refund1) {
+            $this->completePayment($validated_card1, -1 * $amount);
+            $this->completePayment($validated_card2 , $amount);
+            return true;
         }
-        return $Refund1 && $Refund2;
+        return false;
     }
     //كان فيني استخدم نفس يلي فوق بس مشان غير اسماء وما نفوت بالحيط وبالاشارات
-    public function payMoney($ownerCardsNumber, $userCardNumbers, $amount): bool
+    public function payMoney($ownerCardsNumber, $userCardNumber, $amount): bool
     {
-        $Paid1 = false;
-        $Paid2 = false;
-
-        for ($i = 0; $i < count($userCardNumbers); $i++) {
-            if ($this->cardStatus($userCardNumbers[$i], 0, 0, true)) {
-                $Paid1 = true;
-                $this->completePayment($userCardNumbers[$i], $amount);
-                break;
-            }
-        }
-
+        $Paid = false;
         for ($i = 0; $i < count($ownerCardsNumber); $i++) {
             if ($this->cardStatus($ownerCardsNumber[$i], 0, 0, true)) {
-                $Paid2 = true;
+                $Paid = true;
                 $this->completePayment($ownerCardsNumber[$i], -1 * $amount);
+                $this->completePayment($userCardNumber, $amount);
                 break;
             }
         }
 
-        return $Paid1 && $Paid2;
+        return $Paid;
     }
 
     //helper
@@ -78,7 +77,11 @@ trait PaymentProcessingTrait
     // $request->input('cardNumber') //helper
     public function completePayment($cardNumber, $amount)
     {
-        $json = Storage::get('private/cards.json');
+          $path = 'private/cards.json';
+        if (!Storage::exists($path)) {
+            return false;
+        }
+        $json = Storage::get( $path);
         $cards = json_decode($json, true);
 
         foreach ($cards as &$card) {
@@ -105,8 +108,10 @@ trait PaymentProcessingTrait
         $cards = json_decode($json, true);
 
         foreach ($cards as $card) {
+            $plainCardNumber = Crypt::decryptString($card['card_number']); 
+
             if (
-                $cardNumber == $card['card_number'] &&
+                $cardNumber == $plainCardNumber &&
                 ($cvv == $card['cvv'] || $checkCvv) &&
                 Carbon::now()->lessThanOrEqualTo(Carbon::parse($card['expiry'])) &&
                 $card['balance'] >= $Amount
@@ -120,7 +125,7 @@ trait PaymentProcessingTrait
 
 
     //helper  
-    public function TotalPriceReservation($apartment_id, $start, $end)
+    public function TotalPriceReservation($apartment_id, $start, $end,$apartmentuser)
     {
         // $apartment_id = $apartment_user['apartment_id'];
         $apartment = Apartment::where('id', $apartment_id)->first();
@@ -134,70 +139,11 @@ trait PaymentProcessingTrait
         }
         $totalNights = $end->diffInDays($start) + 1;
         //تم زيادة واحد  لانه هاد التابع لا يحسب اليوم الأخير 
-        $totalPrice = $totalNights * $apartment->price;
+        $totalPrice = $totalNights * $apartmentuser->priceAtBooking;
         return $totalPrice;
     }
 
-    //renter
-    ///$request->input('cardNumber')     // must do paymentRequest validation
-    public function finalprocessPayment(PaymentRequest $request, $ApartmentUserID)
-    {
-        $validatedData = $request->validated();
-        $apartment_user = Booking::where('id', $ApartmentUserID)
-            ->where('user_id', Auth::id())
-            ->where('enType', 'Renter')
-            ->where('enStatus', 'AwaitingPayment')
-            ->first();
-
-        if (!$apartment_user) {
-            return response()->json(['message' => 'Payment failed. Reservation not found'], 404);
-        } //apartment
-        // $apartment = Apartment::find($apartment_user['apartment_id']);
-        $apartment = $apartment_user->apartment;
-        if (!$apartment) {
-            return response()->json(['message' => 'Payment failed. Apartment not found'], 404);
-        }
-        $totalPrice = $this->TotalPriceReservation($apartment_user->apartment_id, $apartment_user->startTerm, $apartment_user->endTerm);
-
-        if (!($this->cardStatus($validatedData['cardNumber'], $totalPrice * 0.9, $validatedData['cvv']))) {
-            return response()->json([
-                'message' => 'Payment failed',
-                'details' => 'Either the card number is invalid or the card does not have sufficient funds'
-            ], 402);
-        }
-
-        $this->completePayment($validatedData['cardNumber'], $totalPrice * 0.9);
-
-        Payment::create([
-            'user_id' => Auth::id(),
-            'booking_id'  => $apartment_user->id,
-            'amount' => $totalPrice * 0.9,
-            'cardnumber'  => $validatedData['cardNumber'],
-        ]);
-
-        $apartment_user->update(['enStatus' => 'Accepted']);
-
-        Notification::create([
-            'user_id' => Auth::id(),
-            'type'    => 'payment_completed',
-            'data'    => [
-                'title'        => "Payment completed successfully",
-                'apartment_id' => $apartment->id,
-            ],
-        ]);
-        $owner = $this->getApartmentOwner($apartment->id);
-        Notification::create([
-            'user_id' => $owner->user_id,
-            'type'    => 'reservation_payment_received',
-            'data'    => [
-                'title'        => "The renter has completed the payment for your apartment",
-                'apartment_id' => $apartment->id,
-            ],
-        ]);
-        return response()->json([
-            'message' => 'Payment completed successfully. You can now receive the apartment at any time.'
-        ], 200);
-    }
+ 
 
 
     //عزبالة هدول الميثودين الخطة يلي براسي صار بدها رفرشة دائمة من الخادم وشغلات شوي متقدمة 

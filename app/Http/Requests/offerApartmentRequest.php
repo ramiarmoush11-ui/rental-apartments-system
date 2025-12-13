@@ -30,7 +30,7 @@ class offerApartmentRequest extends FormRequest
                 'required',
                  'digits_between:3,4', 
                 'numeric',
-            ],
+            ]
         ];
     }
 }

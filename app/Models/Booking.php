@@ -19,6 +19,7 @@ class Booking extends Model//pivot -> model
         'startTerm',
         'endTerm',
         'enStatus',
+        'priceAtBooking',
     ];
     protected $casts = [
         'startTerm' => 'date',
