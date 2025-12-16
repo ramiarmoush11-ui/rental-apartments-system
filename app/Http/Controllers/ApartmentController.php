@@ -29,35 +29,30 @@ class ApartmentController extends Controller
     public function store(StoreApartmentRequest $request) //addApartment -> store becauseOf (RESTFUL API)
     {
 
-      /*  $validated_data = $request->validated()->only([
-    'enState',
-    'enCity',
-    'price',
-    'area',
-    'floor',
-]);*/
-$validated = $request->validated();
-$validated_data = [
-    'enState' => $validated['enState'],
-    'enCity'  => $validated['enCity'],
-    'price'   => $validated['price'],
-    'area'    => $validated['area'],
-    'floor'   => $validated['floor'],
-];
-$validated_card=['cardNumber'=>$validated['cardNumber']];
+     
+        $validated = $request->validated();
+        $validated_data = [
+            'enState' => $validated['enState'],
+            'enCity'  => $validated['enCity'],
+            'price'   => $validated['price'],
+            'area'    => $validated['area'],
+            'floor'   => $validated['floor'],
+        ];
+        $validated_card = ['cardNumber' => $validated['cardNumber']];
         $apartment = Apartment::create($validated_data);
         Booking::create(
-          [      'user_id'=>Auth::id(),
-          'apartment_id'=>$apartment->id,
+            [
+                'user_id' => Auth::id(),
+                'apartment_id' => $apartment->id,
                 'enType'    => 'Owner',
                 'enStatus'  => null,
                 'rate'      => null,
                 'startTerm' => null,
                 'endTerm'   => null,
-                'priceAtBooking'=> $validated['price']
+                'priceAtBooking' => $validated['price']
             ]
         );
-        
+
         //هون انا عم هيئ كرت واحد عالقليلة 
         Payment::create([
             'user_id' => Auth::id(),
@@ -89,16 +84,16 @@ $validated_card=['cardNumber'=>$validated['cardNumber']];
         }
 
         $apartment->update($request->validated());
-         $apartment->save();
+        $apartment->save();
         return response()->json([
             'message' => 'apartment updated successfully ',
             'data' => $apartment
         ], 200);
     }
     //owner
-    public function delete($apartmentId ,Request $request)
+    public function delete($apartmentId, Request $request)
     {
-        $delete_verified=$request->boolean('delete_verified');//اذا كان مو مبعوت فلح تعتبر false bec it is null 
+        $delete_verified = $request->boolean('delete_verified'); //اذا كان مو مبعوت فلح تعتبر false bec it is null 
         $apartmentOwner = Booking::where('user_id', Auth::id())
             ->where('apartment_id', $apartmentId)->where('enType', 'Owner')->first();
         if (!$apartmentOwner) {
@@ -108,7 +103,7 @@ $validated_card=['cardNumber'=>$validated['cardNumber']];
         }
         //// التحذير يلي حيكنا عليه .....هيك ارجل حل بدون تعقيد
         $ban_count = Auth::user()->ban_count;
-        if ((!$delete_verified) && (($this->ban_count_ondelete($apartmentId) + $ban_count )>=3) ) {
+        if ((!$delete_verified) && (($this->ban_count_ondelete($apartmentId) + $ban_count) >= 3)) {
             $this->warn_ondelete($ban_count);
         }
 
@@ -142,11 +137,11 @@ $validated_card=['cardNumber'=>$validated['cardNumber']];
                 'data' => null
             ], 404);
         }
-     /*   $apartments->getCollection()->transform(function ($apartment) {
+        /*   $apartments->getCollection()->transform(function ($apartment) {
             $apartment->rate = $this->totalRateAccount($apartment->id); // انتبه: totalRateAccount يجب أن يرجع قيمة
             return $apartment;
         });*/
-        return response()->json(['mes' => null, 'data' => $apartments]);
+        return response()->json(['mes' => null, 'data' => $apartments],200);
     }
     //renter
     public function showApartment($apartmentId)
@@ -262,4 +257,11 @@ $validated_card=['cardNumber'=>$validated['cardNumber']];
             'favourites' => $favourites
         ], 200);
     }
+
+    /**
+     * *filter + 
+     * list +
+     *  addappartment+updateapartment +
+     * show alapartment
+     * *هدول يلي جربتهم */
 }

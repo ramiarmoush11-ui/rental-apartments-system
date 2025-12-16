@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
 {
-    
+
     public function store(ProfileStoreRequest $request)
     {
         $validatedData = $request->validated();
@@ -36,6 +36,7 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request)
     {
         $profile = Auth::user()->profile;
+        $validatedData = $request->validated();
 
         if (!$profile) {
             return response()->json(['message' => 'profile not found'], 404);
@@ -58,5 +59,5 @@ class ProfileController extends Controller
             'profile' => $profile
         ], 200);
     }
-
+    
 }

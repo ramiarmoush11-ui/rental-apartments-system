@@ -19,6 +19,7 @@ trait PaymentProcessingTrait
 
     public function refundMoney($ownerCardsNumber, $userCardNumbers, $amount): bool
     {
+        echo "kkk  ";
         $Refund1 = false;
         $Refund2 = false;
         $validated_card1 = null;
@@ -33,6 +34,7 @@ trait PaymentProcessingTrait
         if (!$Refund2) {
             return false;
         }
+
         for ($i = 0; $i < count($userCardNumbers); $i++) {
             if ($this->cardStatus($userCardNumbers[$i], 0, 0, true)) {
                 $Refund1 = true;
@@ -40,9 +42,10 @@ trait PaymentProcessingTrait
                 break;
             }
         }
+
         if ($Refund2 && $Refund1) {
             $this->completePayment($validated_card1, -1 * $amount);
-            $this->completePayment($validated_card2 , $amount);
+            $this->completePayment($validated_card2, $amount);
             return true;
         }
         return false;
@@ -50,8 +53,11 @@ trait PaymentProcessingTrait
     //كان فيني استخدم نفس يلي فوق بس مشان غير اسماء وما نفوت بالحيط وبالاشارات
     public function payMoney($ownerCardsNumber, $userCardNumber, $amount): bool
     {
+
         $Paid = false;
+        echo "hi frome out";
         for ($i = 0; $i < count($ownerCardsNumber); $i++) {
+            echo "hi frome herer";
             if ($this->cardStatus($ownerCardsNumber[$i], 0, 0, true)) {
                 $Paid = true;
                 $this->completePayment($ownerCardsNumber[$i], -1 * $amount);
@@ -69,50 +75,59 @@ trait PaymentProcessingTrait
         return $Amount * 0.9;
     }
 
-    public function calculateDeposit($Amount)
+    public function calculateDeposit($Amount): float
     {
         return $Amount * 0.1;
     }
 
     // $request->input('cardNumber') //helper
-    public function completePayment($cardNumber, $amount)
+    public function completePayment($cardNumber, $amount): bool
     {
-          $path = 'private/cards.json';
-        if (!Storage::exists($path)) {
+        $path = storage_path('app/private/cards.json');
+
+        if (!file_exists($path)) {
             return false;
         }
-        $json = Storage::get( $path);
+
+        $json = file_get_contents($path);
         $cards = json_decode($json, true);
 
-        foreach ($cards as &$card) {
-            $plainCardNumber = Crypt::decryptString($card['card_number']);
+        if (is_null($cards)) {
+            return false;
+        }
 
-            if ($cardNumber == $plainCardNumber) {
+        foreach ($cards as &$card) {
+            if ($cardNumber == $card['card_number']) {
                 $card['balance'] -= $amount;
                 break;
             }
         }
 
-        Storage::put('private/cards.json', json_encode($cards));
+        file_put_contents($path, json_encode($cards));
+
+        return true;
     }
 
 
     public function cardStatus($cardNumber, $Amount, $cvv, $checkCvv = false): bool
     {
-        // تأكد من وجود ملف البطاقات
-        $path = 'private/cards.json';
-        if (!Storage::exists($path)) {
+        $path = storage_path('app/private/cards.json');
+
+        if (!file_exists($path)) {
             return false;
         }
-        $json = Storage::get('private/cards.json');
+
+        $json = file_get_contents($path);
         $cards = json_decode($json, true);
 
-        foreach ($cards as $card) {
-            $plainCardNumber = Crypt::decryptString($card['card_number']); 
+        if (is_null($cards)) {
+            return false;
+        }
 
+        foreach ($cards as $card) {
             if (
-                $cardNumber == $plainCardNumber &&
-                ($cvv == $card['cvv'] || $checkCvv) &&
+                $cardNumber == $card['card_number'] &&
+                (strval($cvv) === strval($card['cvv']) || $checkCvv) &&
                 Carbon::now()->lessThanOrEqualTo(Carbon::parse($card['expiry'])) &&
                 $card['balance'] >= $Amount
             ) {
@@ -123,9 +138,8 @@ trait PaymentProcessingTrait
         return false;
     }
 
-
     //helper  
-    public function TotalPriceReservation($apartment_id, $start, $end,$apartmentuser)
+    public function TotalPriceReservation($apartment_id, $start, $end, $apartmentuser)
     {
         // $apartment_id = $apartment_user['apartment_id'];
         $apartment = Apartment::where('id', $apartment_id)->first();
@@ -137,13 +151,13 @@ trait PaymentProcessingTrait
         if ($end->lt($start)) {
             return null;
         }
-        $totalNights = $end->diffInDays($start) + 1;
+        $totalNights = $end->diffInDays($start, true) + 1;
         //تم زيادة واحد  لانه هاد التابع لا يحسب اليوم الأخير 
         $totalPrice = $totalNights * $apartmentuser->priceAtBooking;
         return $totalPrice;
     }
 
- 
+
 
 
     //عزبالة هدول الميثودين الخطة يلي براسي صار بدها رفرشة دائمة من الخادم وشغلات شوي متقدمة 

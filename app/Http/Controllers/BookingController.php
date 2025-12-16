@@ -28,8 +28,19 @@ class BookingController extends Controller
         if (!$apartment) {
             return response()->json([
                 'message' => 'Apartment does not exist',
-            ], 204);
+            ], 404);
         }
+
+        // $existingPending = Booking::where('apartment_id', $apartment->id)
+        //     ->where('user_id', Auth::id())
+        //     ->where('enStatus', 'Pending')
+        //     ->exists();
+
+        // if ($existingPending) {
+        //     return response()->json([
+        //         'message' => 'You already have a pending offer for this apartment.'
+        //     ], 409);
+        // }
 
         $isAvailable = $this->checkAvailability($validated['startTerm'], $validated['endTerm'], $apartment);
         if (!$isAvailable) {
@@ -42,10 +53,11 @@ class BookingController extends Controller
         //paying deposit 10% fome total price
         $start = Carbon::parse($validated['startTerm']);
         $end   = Carbon::parse($validated['endTerm']);
-        $totalNights = $end->diffInDays($start) + 1;
+        $totalNights =  $end->diffInDays($start, true) + 1;
         //تم زيادة واحد  لانه هاد التابع لا يحسب اليوم الأخير 
         $totalPrice = $totalNights * $apartment->price;
         $deposit = $this->calculateDeposit($totalPrice);
+
         if (!($this->cardStatus($validated['cardNumber'], $deposit, $validated['cvv']))) {
             return response()->json([
                 'message' => 'Payment failed',
@@ -54,9 +66,12 @@ class BookingController extends Controller
         }
 
         $ownerCardsNumber = $this->getOwnerCardsNumber($apartmentId);
-        $isPaid=$this->payMoney($ownerCardsNumber, $validated['cardNumber'], $deposit);
-        if($isPaid==false){
-              return response()->json([
+        //test return response()->json([$ownerCardsNumber,$validated['cardNumber']]);
+        $isPaid = false;
+
+        $isPaid =  $this->payMoney($ownerCardsNumber, $validated['cardNumber'], $deposit);
+        if ($isPaid == false) {
+            return response()->json([
                 'message' => 'Payment failed',
                 'details' => 'Payment failed due to an issue with the owner payment system , Please try again later'
             ], 503);
@@ -83,7 +98,7 @@ class BookingController extends Controller
             'rate' => null,
             'startTerm' => $validated['startTerm'],
             'endTerm' => $validated['endTerm'],
-            'priceAtBooking'=>$apartment->price
+            'priceAtBooking' => $apartment->price
         ]);
 
         Payment::create([
@@ -99,8 +114,7 @@ class BookingController extends Controller
                 'message' => 'Failed to process the reservation offer for this apartment.'
             ]);
         }
-        $owner_id = $owner->user_id;
-
+        $owner_id = $owner->id;
         Notification::create([
             'user_id' => $owner_id,
             'type'    => 'reservation_offer',
@@ -187,7 +201,7 @@ class BookingController extends Controller
         if (!$PendingReservations) {
             return response()->json(['message' => 'Not found'], 404);
         }
-        $owner = $this->getApartmentOwner($PendingReservations['apartment_id']); //يكمن ايرور
+        $owner = $this->getApartmentOwner($PendingReservations['apartment_id']);
         if ($owner && $owner['user_id'] != Auth::id()) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
@@ -198,8 +212,12 @@ class BookingController extends Controller
     }
 
     //التقييم لازم يكون rate + comment 
-    public function EvaluateApartment(int $apartmentId, int $rate)
+    public function EvaluateApartment($apartmentId, Request $request)
     {
+        $validated = $request->validate([
+            'rate' => 'required|numeric|min:1|max:5',
+        ]);
+        $rate = $validated['rate'];
         $apartment = Apartment::where('id', $apartmentId)->first();
         if (!$apartment) {
             return response()->json([
@@ -220,10 +238,9 @@ class BookingController extends Controller
         }
 
         $mid_date = $this->midDate($apartmentuser['startTerm'], $apartmentuser['endTerm']);
-        //تابع نحنا ساويناه بدل الموجود سابقا لانه هاد ادق وبالثواني هدلاك اذا مفرد مو زابط
-        //$mid_date = (Carbon::parse($apartmentuser['startTerm'])->startOfDay())->average(Carbon::parse($apartmentuser['endTerm'])->endOfDay());
 
-        if (!($mid_date->lt(now()))) { //=== mid_date-gt(now())
+        if (now()->lt($mid_date)) { //if (!($mid_date->lt(now()))) {انو بحب التعقيد وكذا 
+            //=== mid_date->gt(now())
             return response()->json(
                 ['message' => 'Thank you for your support.
              You can leave a review for the apartment once at least half of the reservation period has passed.'],
@@ -237,7 +254,7 @@ class BookingController extends Controller
         $apartment->save();
 
         $apartmentOwner = $this->getApartmentOwner($apartmentId);
-        $owner_id = $apartmentOwner['user_id'];
+        $owner_id = $apartmentOwner->id;
 
         Notification::create([
             'user_id' => $owner_id,
@@ -254,20 +271,18 @@ class BookingController extends Controller
     }
 
     //owner   approveReservation
-    public function markReservationAwaitingPayment($ApartmentUserID)
+    public function markReservationAwaitingPayment($BookingId)
     {
-        $apartmentuser = Booking::where('id', $ApartmentUserID)->first();
+        $apartmentuser = Booking::where('id', $BookingId)->first();
         if (!$apartmentuser) {
             return response()->json(['message' => 'Reservation not found'], 404);
         }
         $owner = $this->getApartmentOwner($apartmentuser['apartment_id']);
-        if (!$owner || $owner['user_id'] != Auth::id()) {
+
+        if (!$owner || $owner->id != Auth::id()) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
-        //مكررة 
-      /*  if (!$apartmentuser) { 
-            return response()->json(['message' => 'Approving failed'], 404);
-        }*/
+
 
         $apartmentuser->update(['enStatus' => 'AwaitingPayment']);
 
@@ -305,25 +320,26 @@ class BookingController extends Controller
     }
 
     //++ notiii
-    public function updateResrevationStastus($apartmentId)
+    public function userCancelReservation($BookingId)
     {
-        //first of all we need to fetch the owner of the apartment becauseof notification
-        $apartmentOwner = $this->getApartmentOwner($apartmentId);
-        //fetch the relatoinship
-        $apartment_user = Booking::where('user_id', Auth::id())
-            ->where('apartment_id', $apartmentId)
-            ->where('enType', 'Renter')->first();
 
-        if (!$apartment_user) {
+        $booking = Booking::find($BookingId); //->where('user_id', Auth::id())
+        // ->where('enType', 'Renter')->first();
+
+        $apartmentId = $booking->apartment_id;
+
+        $apartmentOwner = $this->getApartmentOwner($apartmentId);
+
+        if (!$booking) {
             return response()->json(['message' => 'canceling faild'], 403);
         }
 
-        $status = $apartment_user->enStatus;
+        $status = $booking->enStatus;
 
         if ($status === 'Pending' || $status === 'AwaitingPayment') {
-            $this->cancelPendingOrAwaitingPaymentReservation($apartmentOwner, $apartment_user, $apartmentId);
+            return  $this->cancelPendingOrAwaitingPaymentReservation($apartmentOwner, $booking, $apartmentId);
         } elseif ($status === 'Accepted') {
-            $this->cancelAcceptedReservation($apartmentOwner, $apartment_user, $apartmentId);
+            return $this->cancelAcceptedReservation($apartmentOwner, $booking, $apartmentId);
         } elseif (
             $status === 'Cancelled'
         ) {
@@ -335,21 +351,22 @@ class BookingController extends Controller
     //helper 1// without band
     public function cancelPendingOrAwaitingPaymentReservation($apartmentOwner, $apartment_user, $apartmentId)
     {
-        $totalPrice = $this->TotalPriceReservation($apartment_user->apartment_id, $apartment_user->startTerm, $apartment_user->endTerm,$apartment_user);
+        $totalNights =  $apartment_user->endTerm->diffInDays($apartment_user->startTerm, true) + 1;
+        //تم زيادة واحد  لانه هاد التابع لا يحسب اليوم الأخير 
+        $totalPrice = $totalNights * $apartment_user->priceAtBooking;
         $deposit = $this->calculateDeposit($totalPrice);
         //;
-        $Payments = Auth::user()->payments();
+        $Payments = Auth::user()->payments;
         $cardNumbers = $Payments->pluck('cardNumber'); //هاد التابع بجيب كل ارقام البطاقات بالpayments 
-
         //مشان الخصم من المالك 
+
         $ownerCardsNumber = $this->getOwnerCardsNumber($apartmentId);
 
         $FailRefund = $this->refundMoney($ownerCardsNumber, $cardNumbers, $deposit);
 
         if (!$FailRefund) {
-            //نحط اسمه بملف جيسون بحيث تابع اخر يقدر يستعيدهم منه 
+            echo "damn";
         }
-
         $apartment_user->update(['enStatus' => 'Cancelled']);
 
         Notification::create([
@@ -377,25 +394,27 @@ class BookingController extends Controller
         ], 200);
     }
     //helper 2 //within band
-    public function cancelAcceptedReservation($apartmentOwner, $apartment_user, $apartmentId)
+    public function cancelAcceptedReservation($apartmentOwner, $booking, $apartmentId)
     {
         /*if (Auth::user()->ban_type === 'Permanent') {
             return response()->json([
                 'message' => 'The cancellation process could not be completed due to errors.',
             ]);
         }*/
+        $totalPrice = $this->TotalPriceReservation($booking->apartment_id, $booking->startTerm, $booking->endTerm, $booking);
 
-        $totalPrice = $this->TotalPriceReservation($apartment_user->apartment_id, $apartment_user->startTerm, $apartment_user->endTerm,$apartment_user);
         $remaining90 = $this->calculateRemainingAfterDeposit($totalPrice);
-       $Payments = User::where('id',$apartment_user->user_id)->first()->payments();
+
+        $Payments = Auth::user()->payments();
         $cardNumbers = $Payments->pluck('cardNumber');
+
         //مشان الخصم من المالك 
         $ownerCardsNumber = $this->getOwnerCardsNumber($apartmentId);
 
 
         $now = Carbon::now();
-        $start = Carbon::parse($apartment_user->startTerm)->startOfDay();
-        $end   = Carbon::parse($apartment_user->endTerm)->endOfDay();
+        $start = Carbon::parse($booking->startTerm)->startOfDay();
+        $end   = Carbon::parse($booking->endTerm)->endOfDay();
         $before3Days = $start->copy()->subDays(3);
 
         $FailRefund = false;
@@ -403,30 +422,31 @@ class BookingController extends Controller
 
         if ($now->between($start, $end, true)) {
             // الحجز شغال حاليا الغاء بدون اي استرجاع ما رح بندو بكفي ما رجعلو شي
-            $apartment_user->update(['enStatus' => 'Cancelled']);
+            $booking->update(['enStatus' => 'Cancelled']);
             $refundMessage = 'Reservation canceled during active period - no refund';
+            $FailRefund = true;
         } elseif ($now->between($before3Days, $start, true)) {
             // ضمن اخر 3 أيام قبل البداية الغاء بدون ارجاع العربون بس رح بندو مشان يتعلم تاني مرة
             $FailRefund = $this->refundMoney($ownerCardsNumber, $cardNumbers, $remaining90);
-            if( !$FailRefund){
+            if (!$FailRefund) {
                 //return فشل 
             }
-            $apartment_user->update(['enStatus' => 'Cancelled']);
+            $booking->update(['enStatus' => 'Cancelled']);
             $refundMessage = 'Reservation canceled within 3 days before start - deposit not refunded';
             $this->banUser(Auth::id(), "cancel Accepted Reservation within last three_days before reservation", 30);
         } elseif ($now->isBefore($before3Days)) {
             // مستقبل بعيد الغاء بدون ارجاع العربون مافي ضرر يعني مافي باند
             $FailRefund = $this->refundMoney($ownerCardsNumber, $cardNumbers, $remaining90);
-            $apartment_user->update(['enStatus' => 'Cancelled']);
+            $booking->update(['enStatus' => 'Cancelled']);
             $refundMessage = 'Reservation canceled in advance - deposit not refunded';
         }
 
         if (!$FailRefund) {
-            //bla bla bla
+            echo "blabla";
         }
 
         Notification::create([
-            'user_id' => $apartment_user->user_id,
+            'user_id' => $booking->user_id,
             'type'    => 'accepted_reservation_canceled',
             'data'    => [
                 'title'        => "Your accepted reservation for apartment #{$apartmentId} has been canceled. Any paid deposit has been refunded to your card.",
@@ -440,16 +460,15 @@ class BookingController extends Controller
             'data'    => [
                 'title'        => "An accepted reservation on your apartment #{$apartmentId} has been canceled by the renter.",
                 'apartment_id' => $apartmentId,
-                'renter_id'    => $apartment_user->user_id,
+                'renter_id'    => $booking->user_id,
             ],
         ]);
-
         return response()->json([
             'message' => 'Reservation canceled successfully',
             'details' => $refundMessage
         ], 200);
     }
-       //renter
+    //renter
     ///$request->input('cardNumber')     // must do paymentRequest validation
     public function finalprocessPayment(PaymentRequest $request, $ApartmentUserID)
     {
@@ -468,7 +487,7 @@ class BookingController extends Controller
         if (!$apartment) {
             return response()->json(['message' => 'Payment failed. Apartment not found'], 404);
         }
-        $totalPrice = $this->TotalPriceReservation($apartment_user->apartment_id, $apartment_user->startTerm, $apartment_user->endTerm,$apartment_user);
+        $totalPrice = $this->TotalPriceReservation($apartment_user->apartment_id, $apartment_user->startTerm, $apartment_user->endTerm, $apartment_user);
 
         if (!($this->cardStatus($validatedData['cardNumber'], $this->calculateRemainingAfterDeposit($totalPrice), $validatedData['cvv']))) {
             return response()->json([
@@ -509,6 +528,5 @@ class BookingController extends Controller
             'message' => 'Payment completed successfully. You can now receive the apartment at any time.'
         ], 200);
     }
-
 }
 //'Canclled'

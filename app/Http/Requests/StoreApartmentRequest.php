@@ -32,10 +32,24 @@ class StoreApartmentRequest extends FormRequest
                     $this->validateCity($attribute, $value, $fail);
                 },
             ],
-
-            'price' => 'required|numeric|min:1',
-            'area'  => 'required|numeric|min:1',
-            'floor' => 'required|integer|min:0',
+            'price' => [
+                'required',
+                'numeric',
+                'min:1',
+                'max:1000000',
+            ],
+            'area' => [
+                'required',
+                'numeric',
+                'min:10',
+                'max:10000',
+            ],
+            'floor' => [
+                'required',
+                'integer',
+                'min:0',
+                'max:100',
+            ],
 
             'cardNumber' => [
                 'required',

@@ -18,8 +18,8 @@ class offerApartmentRequest extends FormRequest
         return [
             'type'=>'prohibited',
             'rate'=>'prohibited',
-            'startTerm'=>'date|after_or_equal:today',
-            'endTerm'=>'date|after_or_equal:startTerm',
+            'startTerm'=>'required|date|after_or_equal:today',
+            'endTerm'=>'required|date|after_or_equal:startTerm',
             'cardNumber' => [
                 'required',             
                 'string',               

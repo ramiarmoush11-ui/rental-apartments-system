@@ -37,7 +37,7 @@ trait BookingLogicTrait
         $Accepted_offers = Booking::where('apartment_id', $apartmentId)->where('enType', 'Renter')->where('enStatus', "Accepted")->orderBy('startTerm', 'asc')->get();
         $pending_AwaitingPayment_offers = Booking::where('apartment_id', $apartmentId)->where('enType', 'Renter')->whereIn('enStatus', ["AwaitingPayment", "Pending"])->orderBy('startTerm', 'asc')->get();
         for ($i = 0; $i < count($pending_AwaitingPayment_offers); $i++) {
-            $totalPrice = $this->TotalPriceReservation($pending_AwaitingPayment_offers[$i]->apartment_id, $pending_AwaitingPayment_offers[$i]->startTerm, $pending_AwaitingPayment_offers[$i]->endTerm,$pending_AwaitingPayment_offers[$i]);
+            $totalPrice = $this->TotalPriceReservation($pending_AwaitingPayment_offers[$i]->apartment_id, $pending_AwaitingPayment_offers[$i]->startTerm, $pending_AwaitingPayment_offers[$i]->endTerm, $pending_AwaitingPayment_offers[$i]);
             if ($totalPrice === null) {
                 return response()->json([
                     'message' => 'Invalid reservation period or apartment not found.'
@@ -61,7 +61,7 @@ trait BookingLogicTrait
 
             if ($now->between($threshold, $start, true) && $now->lt($start)) {
                 //within_three_days
-                $totalPrice = $this->TotalPriceReservation($offer->apartment_id, $offer->startTerm, $offer->endTerm,$offer);
+                $totalPrice = $this->TotalPriceReservation($offer->apartment_id, $offer->startTerm, $offer->endTerm, $offer);
                 $this->cancelReservation($offer, $totalPrice);
                 $bannedCheck = $this->banUser(Auth::id(), "cancel Accepted Reservation within last three_days before reservation", 60);
                 if (!$bannedCheck || Auth::user()->ban_type === 'Permanent') {
@@ -88,16 +88,16 @@ trait BookingLogicTrait
             //future
         }
     }
-        public function cancelReservation($apartment_user, $Amount)
+    public function cancelReservation($apartment_user, $Amount)
     {
-        $Payments = User::where('id',$apartment_user->user_id)->first()->payments();
+        $Payments = User::where('id', $apartment_user->user_id)->first()->payments();
         $userCardsNumber = $Payments->pluck('cardNumber'); //هاد التابع بجيب كل ارقام البطاقات بالpayments 
         $ownerCardsNumber = $this->getOwnerCardsNumber($apartment_user->apartmentId);
 
 
         $FailRefund = $this->refundMoney($ownerCardsNumber, $userCardsNumber, $Amount);
-            if (!$FailRefund) {
-                //return فشل 
+        if (!$FailRefund) {
+            //return فشل 
         }
         /*$FailRefund = false;
         for ($i = 0; $i < count($userCardsNumber); $i++) {
@@ -161,48 +161,44 @@ trait BookingLogicTrait
         return true;
     }
     //helper
-    public function checkAvailability(string $start, string $end, Apartment $apartment)
+    public function checkAvailability(string $start, string $end, Apartment $apartment): bool
     {
         $start_date = Carbon::parse($start)->startOfDay();
         $end_date   = Carbon::parse($end)->endOfDay();
 
-        $apartment_user = Booking::where('enType', 'Renter')
+        $bookings = Booking::where('apartment_id', $apartment->id)
             ->whereIn('enStatus', ['Accepted', 'Pending', 'AwaitingPayment'])
-            ->where('apartment_id', '=', $apartment->id)->orderBy('startTerm', 'asc')->get();
+            ->orderBy('startTerm', 'asc')
+            ->get();
 
-        if ($apartment_user->isEmpty()) {
+        if ($bookings->isEmpty()) {
             return true;
         }
 
-        $start_date_of_first_reserve = Carbon::parse($apartment_user->first()->startTerm)->startOfDay();
+
+        $start_date_of_first_reserve = Carbon::parse($bookings->first()->startTerm)->startOfDay();
+        $end_date_of_last_reserve = Carbon::parse($bookings->last()->endTerm)->endOfDay();
+
         if ($end_date->lt($start_date_of_first_reserve)) {
             return true;
         }
-
-        $end_date_of_last_reserve = Carbon::parse($apartment_user->last()->endTerm)->endOfDay();
 
         if ($start_date->gt($end_date_of_last_reserve)) {
             return true;
         }
 
-        foreach ($apartment_user as $index => $current) {
-            $next = $apartment_user->get($index + 1);
-
-            if (! $next) {
-                break;
-            }
-
-            $currentEnd = Carbon::parse($current->endTerm)->endOfDay();
-            $nextStart  = Carbon::parse($next->startTerm)->startOfDay();
+        for ($i = 0; $i < $bookings->count() - 1; $i++) {
+            $currentEnd = Carbon::parse($bookings[$i]->endTerm)->endOfDay();
+            $nextStart  = Carbon::parse($bookings[$i + 1]->startTerm)->startOfDay();
 
             if ($start_date->gt($currentEnd) && $end_date->lt($nextStart)) {
                 return true;
             }
         }
 
-
         return false;
     }
+
 
     //helper
     public function totalRateAccount(int $apartmentId)
@@ -245,21 +241,30 @@ trait BookingLogicTrait
     }
 
     //helper
-    public function getApartmentOwner($apartmentId): ?Booking
+    public function getApartmentOwner($apartmentId): ?User
     {
-        return Booking::where('apartment_id', $apartmentId)
+        $ownerBooking = Booking::where('apartment_id', $apartmentId)
             ->where('enType', 'Owner')
             ->first();
-    }
-
-    public function getOwnerCardsNumber($apartmentId): ?string
-    {
-        $owner = $this->getApartmentOwner($apartmentId);
-        if(!$owner){
+        if (!$ownerBooking) {
             return null;
         }
+
+        return $ownerBooking->user;
+    }
+
+    public function getOwnerCardsNumber($apartmentId) //: ?string لا تعمل هيك مهما كلف الثمن
+    {
+        $owner = $this->getApartmentOwner($apartmentId);
+      
+
+        if (!$owner) {
+            return null;
+        }
+
         $ownerPayments = $owner->payments();
-        $ownerCardsNumber = $ownerPayments->pluck('cardNumber');
+         $ownerCardsNumber = $ownerPayments->pluck('cardNumber');
+        //$ownerCardsNumber = $ownerPayments->pluck('cardNumber')->toArray();
         return $ownerCardsNumber;
     }
 
@@ -272,9 +277,9 @@ trait BookingLogicTrait
         ], 200);
     }
 
-        public function ban_count_ondelete($apartmentId)
+    public function ban_count_ondelete($apartmentId)
     {
-        $ban_count=0;
+        $ban_count = 0;
         $Accepted_offers = Booking::where('apartment_id', $apartmentId)->where('enType', 'Renter')->where('enStatus', "Accepted")->orderBy('startTerm', 'asc')->get();
         $pending_AwaitingPayment_offers = Booking::where('apartment_id', $apartmentId)->where('enType', 'Renter')->whereIn('enStatus', ["AwaitingPayment", "Pending"])->orderBy('startTerm', 'asc')->get();
 
@@ -311,5 +316,4 @@ trait BookingLogicTrait
         }
         return $ban_count;
     }
-    
 }

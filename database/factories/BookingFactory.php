@@ -22,6 +22,8 @@ class BookingFactory extends Factory
             'rate' => $this->faker->randomFloat(1, 1, 5),
             'startTerm' => $this->faker->date(),
             'endTerm' => $this->faker->date(),
+            'priceAtBooking' => $this->faker->randomFloat(2, 100, 1000),
+
         ];
     }
 }
