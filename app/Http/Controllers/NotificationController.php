@@ -36,6 +36,8 @@ class NotificationController extends Controller
                 'data' => null
             ], 404); //403 -> 204 //edit number three ^__^ 204->404
         }
+        $notification->seen=true;
+        $notification->save();
          return response()->json(['mes' => null, 'data' => $notification],200);
 
     }

@@ -18,7 +18,9 @@ class UpdateApartmentRequest extends FormRequest
     public function rules(): array
     {
 
-        return [
+        return 
+        
+        [
             'enState' => [
                 'sometimes',
                 'string',
@@ -66,11 +68,11 @@ class UpdateApartmentRequest extends FormRequest
         ];
     }
 
-    public function messages()
+  /*  public function messages()
     {
         return [
             'enState.required_with' => 'If you provide a city, you must also provide a state.',
             'enCity.required_with'  => 'If you provide a state, you must also provide a city.',
         ];
-    }
+    }*/
 }

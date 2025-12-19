@@ -24,6 +24,8 @@ trait PaymentProcessingTrait
         $Refund2 = false;
         $validated_card1 = null;
         $validated_card2 = null;
+        echo("____________");
+        echo($ownerCardsNumber);
         for ($i = 0; $i < count($ownerCardsNumber); $i++) {
             if ($this->cardStatus($ownerCardsNumber[$i], $amount, 0, true)) {
                 $Refund2 = true;
@@ -59,13 +61,15 @@ trait PaymentProcessingTrait
         for ($i = 0; $i < count($ownerCardsNumber); $i++) {
             echo "hi frome herer";
             if ($this->cardStatus($ownerCardsNumber[$i], 0, 0, true)) {
+                  echo("this is ");
+                echo($ownerCardsNumber[$i]);
                 $Paid = true;
                 $this->completePayment($ownerCardsNumber[$i], -1 * $amount);
                 $this->completePayment($userCardNumber, $amount);
                 break;
             }
         }
-
+echo($Paid);
         return $Paid;
     }
 
@@ -123,8 +127,19 @@ trait PaymentProcessingTrait
         if (is_null($cards)) {
             return false;
         }
-
+echo('input');
+            echo "<br>";
+            echo($cardNumber);
         foreach ($cards as $card) {
+           // $plainCardNumber = Crypt::decryptString($card['card_number']);
+            
+          /*  echo "<br>";
+            echo('decrypted');
+            echo "<br>";
+            echo($plainCardNumber);
+            echo "<br>";*/
+
+
             if (
                 $cardNumber == $card['card_number'] &&
                 (strval($cvv) === strval($card['cvv']) || $checkCvv) &&
@@ -146,14 +161,16 @@ trait PaymentProcessingTrait
         if (!$apartment) {
             return null;
         }
-        $start = Carbon::parse($start)->startOfDay();
-        $end = Carbon::parse($end)->endOfDay();
+        $start = Carbon::parse($start);
+        $end = Carbon::parse($end);
         if ($end->lt($start)) {
             return null;
         }
         $totalNights = $end->diffInDays($start, true) + 1;
         //تم زيادة واحد  لانه هاد التابع لا يحسب اليوم الأخير 
         $totalPrice = $totalNights * $apartmentuser->priceAtBooking;
+        echo("___________");
+        echo($totalPrice);
         return $totalPrice;
     }
 

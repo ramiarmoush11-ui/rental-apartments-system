@@ -32,68 +32,18 @@ trait BookingLogicTrait
         return true;
     }
     //helper
-    public function ConflictResolve($apartmentId)
-    {
-        $Accepted_offers = Booking::where('apartment_id', $apartmentId)->where('enType', 'Renter')->where('enStatus', "Accepted")->orderBy('startTerm', 'asc')->get();
-        $pending_AwaitingPayment_offers = Booking::where('apartment_id', $apartmentId)->where('enType', 'Renter')->whereIn('enStatus', ["AwaitingPayment", "Pending"])->orderBy('startTerm', 'asc')->get();
-        for ($i = 0; $i < count($pending_AwaitingPayment_offers); $i++) {
-            $totalPrice = $this->TotalPriceReservation($pending_AwaitingPayment_offers[$i]->apartment_id, $pending_AwaitingPayment_offers[$i]->startTerm, $pending_AwaitingPayment_offers[$i]->endTerm, $pending_AwaitingPayment_offers[$i]);
-            if ($totalPrice === null) {
-                return response()->json([
-                    'message' => 'Invalid reservation period or apartment not found.'
-                ], 422);
-            }
-            $deposit = $this->calculateDeposit($totalPrice);
-            $this->cancelReservation($pending_AwaitingPayment_offers[$i], $deposit);
-        }
-
-        $now = Carbon::now();
-        foreach ($Accepted_offers as $offer) {
-            $start = Carbon::parse($offer->startTerm)->startOfDay();
-            $end   = Carbon::parse($offer->endTerm)->endOfDay();
-
-            if ($end->lt($now)) {
-                //past
-                continue;
-            }
-
-            $threshold = $start->copy()->subDays(3); //ساوينا له نسخ مشان ما يغير المتغير الأصلي start
-
-            if ($now->between($threshold, $start, true) && $now->lt($start)) {
-                //within_three_days
-                $totalPrice = $this->TotalPriceReservation($offer->apartment_id, $offer->startTerm, $offer->endTerm, $offer);
-                $this->cancelReservation($offer, $totalPrice);
-                $bannedCheck = $this->banUser(Auth::id(), "cancel Accepted Reservation within last three_days before reservation", 60);
-                if (!$bannedCheck || Auth::user()->ban_type === 'Permanent') {
-                    return response()->json([
-                        'message' => 'The cancellation process could not be completed due to errors.',
-                    ]);
-                }
-                continue;
-            }
-
-            /*if ($now->between($start, $end, true)) {
-                //current
-            
-                continue;
-            }*/
-
-            if ($now->lt($threshold)) {
-                //future
-                $totalPrice = $this->TotalPriceReservation($offer->apartment_id, $offer->startTerm, $offer->endTerm);
-                $this->cancelReservation($offer, $totalPrice);
-                continue;
-            }
-
-            //future
-        }
-    }
+    public function ConflictResolve($apartmentId) {}
     public function cancelReservation($apartment_user, $Amount)
     {
-        $Payments = User::where('id', $apartment_user->user_id)->first()->payments();
+        $Payments = User::where('id', $apartment_user->user_id)->first()->payments;
+        echo ("payments1");
+        echo ($Payments);
         $userCardsNumber = $Payments->pluck('cardNumber'); //هاد التابع بجيب كل ارقام البطاقات بالpayments 
-        $ownerCardsNumber = $this->getOwnerCardsNumber($apartment_user->apartmentId);
-
+        echo ("payments2");
+        echo ($userCardsNumber);
+        $ownerCardsNumber = $this->getOwnerCardsNumber($apartment_user->apartment_id);
+        echo ("payments3");
+        echo ($ownerCardsNumber);
 
         $FailRefund = $this->refundMoney($ownerCardsNumber, $userCardsNumber, $Amount);
         if (!$FailRefund) {
@@ -239,40 +189,66 @@ trait BookingLogicTrait
 
         return $start->copy()->addSeconds($halfSeconds);
     }
-
+    /*    Schema::create('bookings', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('apartment_id')->nullable()->constrained('apartments')->nullOnDelete();
+            $table->enum('enType', ['Owner', 'Renter']);
+            $table->enum('enStatus', ['Pending', 'Cancelled', 'Accepted', 'AwaitingPayment', 'Ended'])->nullable();//عدل المشروع كامل مع 'Cancelled'
+            $table->float('rate')->nullable();
+            $table->date('startTerm')->nullable();
+            $table->date('endTerm')->nullable();
+            $table->float('priceAtBooking');
+            $table->timestamps();
+        });*/
     //helper
     public function getApartmentOwner($apartmentId): ?User
     {
+        echo ("apartmentId");
+        echo ($apartmentId);
         $ownerBooking = Booking::where('apartment_id', $apartmentId)
             ->where('enType', 'Owner')
             ->first();
         if (!$ownerBooking) {
+            echo ("ownerBookingstop");
             return null;
         }
+        echo ("ownerBooking");
+
 
         return $ownerBooking->user;
     }
+    //cardStatus($cardNumber, $Amount, $cvv, $checkCvv = false)
 
-    public function getOwnerCardsNumber($apartmentId) //: ?string لا تعمل هيك مهما كلف الثمن
+    public function getOwnerCardsNumber($apartmentId) //: ?string لا تعمل هيك مهما كلف الثمن 
     {
         $owner = $this->getApartmentOwner($apartmentId);
-      
-
+        echo ("owner");
+        echo ($owner);
         if (!$owner) {
             return null;
         }
-
-        $ownerPayments = $owner->payments();
-         $ownerCardsNumber = $ownerPayments->pluck('cardNumber');
-        //$ownerCardsNumber = $ownerPayments->pluck('cardNumber')->toArray();
+        $ownerPayments = $owner->payments;
+        $ownerCardsNumber = $ownerPayments->pluck('cardNumber');
+        $ownerCardsNumber = $ownerPayments->pluck('cardNumber')->toArray();
         return $ownerCardsNumber;
     }
 
-    public function warn_ondelete($ban_count)
+
+
+    //
+
+
+    //$ownerCardsNumber = $ownerPayments->pluck('cardNumber')->toArray();
+
+
+
+    public function warn_ondelete($ban_count, $ban_count_ondelete)
     {
         return response()->json([
             'message' => 'warning..!!',
-            'ban_count' => $ban_count,
+            'ban_count before' => $ban_count,
+            'ban_count_ondelete this apartment' => $ban_count_ondelete,
             'note' => 'Do you want to complete the deletion? , you will be banned after this action'
         ], 200);
     }

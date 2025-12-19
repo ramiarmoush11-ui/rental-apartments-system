@@ -57,7 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
     |-------------------- Apartments --------------------
     */
     Route::prefix('apartments')->group(function () {
-
+ 
         // Apartment CRUD
         Route::controller(ApartmentController::class)->group(function () {
             Route::post('/', 'store')->middleware(['notbanned', 'verifiedAccount']);
@@ -91,7 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/reservations/{BookingId}/final-payment', 'finalprocessPayment')->middleware(['notbanned', 'verifiedAccount']);
             Route::get('/reservations/awaiting-payment', 'showReservationsAwaitingPayment')->middleware('notbanned');
             Route::post('/{apartmentId}/evaluate', 'EvaluateApartment')->middleware(['notbanned', 'verifiedAccount']);
-            Route::post('/reservations/{apartmentId}/cancel', 'userCancelReservation')->middleware(['notbanned', 'verifiedAccount']);
+            Route::post('/reservations/{apartmentUserId}/cancel', 'userCancelReservation')->middleware(['notbanned', 'verifiedAccount']);//
         });
     });
 });
