@@ -31,48 +31,35 @@ trait BookingLogicTrait
         }
         return true;
     }
-    //helper
-    public function ConflictResolve($apartmentId) {}
-    public function cancelReservation($apartment_user, $Amount)
+
+    public function cancelReservation($booking, $Amount)
     {
-        $Payments = User::where('id', $apartment_user->user_id)->first()->payments;
-        echo ("payments1");
-        echo ($Payments);
-        $userCardsNumber = $Payments->pluck('cardNumber'); //هاد التابع بجيب كل ارقام البطاقات بالpayments 
-        echo ("payments2");
-        echo ($userCardsNumber);
-        $ownerCardsNumber = $this->getOwnerCardsNumber($apartment_user->apartment_id);
-        echo ("payments3");
-        echo ($ownerCardsNumber);
+        $Payments = User::where('id', $booking->user_id)->first()->payments;
+
+        $userCardsNumber = $Payments->pluck('cardNumber');
+        $ownerCardsNumber = $this->getOwnerCardsNumber($booking->apartment_id);
 
         $FailRefund = $this->refundMoney($ownerCardsNumber, $userCardsNumber, $Amount);
+
         if (!$FailRefund) {
-            //return فشل 
+            return response()->json([
+                'message' => 'Refund process failed. Please try again later.'
+            ], 500);
         }
-        /*$FailRefund = false;
-        for ($i = 0; $i < count($userCardsNumber); $i++) {
-            if ($this->cardStatus($userCardsNumber[$i], 0, 0, true)) {
-                $FailRefund = $this->refundMoney($ownerCardsNumber, $userCardsNumber[$i], $Amount);
-                break;
-            }
-        }
-        if (!$FailRefund) {
-            //نحط اسمه بملف جيسون بحيث تابع اخر يقدر يستعيدهم منه 
-        }
-*/
-        $apartment_user->update(['enStatus' => 'Cancelled']);
+
+        $booking->update(['enStatus' => 'Cancelled']);
+
         Notification::create([
-            'user_id' => $apartment_user['user_id'],
+            'user_id' => $booking['user_id'],
             'type'    => 'reservation_cancelled',
             'data'    => [
-                'title'        => "Reservation cancelled on your apartment and your paid amount has been refunded ,
-                if you experience any problem in refunding money - pleas check refund_money tab",
-                'apartment_id' => $apartment_user['apartment_id']
+                'title'        => "Reservation cancelled on your apartment and your paid amount has been refunded. If you experience any problem with refunding money, please check the refund_money tab.",
+                'apartment_id' => $booking['apartment_id']
             ],
         ]);
 
         return response()->json([
-            'message' => 'Reservaion cancelld successfully'
+            'message' => 'Reservation cancelled successfully.'
         ], 200);
     }
 
@@ -149,7 +136,6 @@ trait BookingLogicTrait
         return false;
     }
 
-
     //helper
     public function totalRateAccount(int $apartmentId)
     {
@@ -189,67 +175,41 @@ trait BookingLogicTrait
 
         return $start->copy()->addSeconds($halfSeconds);
     }
-    /*    Schema::create('bookings', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('apartment_id')->nullable()->constrained('apartments')->nullOnDelete();
-            $table->enum('enType', ['Owner', 'Renter']);
-            $table->enum('enStatus', ['Pending', 'Cancelled', 'Accepted', 'AwaitingPayment', 'Ended'])->nullable();//عدل المشروع كامل مع 'Cancelled'
-            $table->float('rate')->nullable();
-            $table->date('startTerm')->nullable();
-            $table->date('endTerm')->nullable();
-            $table->float('priceAtBooking');
-            $table->timestamps();
-        });*/
+
     //helper
     public function getApartmentOwner($apartmentId): ?User
     {
-        echo ("apartmentId");
-        echo ($apartmentId);
         $ownerBooking = Booking::where('apartment_id', $apartmentId)
             ->where('enType', 'Owner')
             ->first();
+
         if (!$ownerBooking) {
-            echo ("ownerBookingstop");
             return null;
         }
-        echo ("ownerBooking");
-
 
         return $ownerBooking->user;
     }
-    //cardStatus($cardNumber, $Amount, $cvv, $checkCvv = false)
 
     public function getOwnerCardsNumber($apartmentId) //: ?string لا تعمل هيك مهما كلف الثمن 
     {
         $owner = $this->getApartmentOwner($apartmentId);
-        echo ("owner");
-        echo ($owner);
+
         if (!$owner) {
             return null;
         }
         $ownerPayments = $owner->payments;
-        $ownerCardsNumber = $ownerPayments->pluck('cardNumber');
+        //  $ownerCardsNumber = $ownerPayments->pluck('cardNumber');
         $ownerCardsNumber = $ownerPayments->pluck('cardNumber')->toArray();
         return $ownerCardsNumber;
     }
 
-
-
-    //
-
-
-    //$ownerCardsNumber = $ownerPayments->pluck('cardNumber')->toArray();
-
-
-
     public function warn_ondelete($ban_count, $ban_count_ondelete)
     {
         return response()->json([
-            'message' => 'warning..!!',
-            'ban_count before' => $ban_count,
-            'ban_count_ondelete this apartment' => $ban_count_ondelete,
-            'note' => 'Do you want to complete the deletion? , you will be banned after this action'
+            'message' => 'Warning!',
+            'ban_count_before' => $ban_count,
+            'ban_count_ondelete' => $ban_count_ondelete,
+            'note' => 'Do you want to complete the deletion? You will be banned after this action.'
         ], 200);
     }
 

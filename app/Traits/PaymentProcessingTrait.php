@@ -19,13 +19,10 @@ trait PaymentProcessingTrait
 
     public function refundMoney($ownerCardsNumber, $userCardNumbers, $amount): bool
     {
-        echo "kkk  ";
         $Refund1 = false;
         $Refund2 = false;
         $validated_card1 = null;
         $validated_card2 = null;
-        echo("____________");
-        echo($ownerCardsNumber);
         for ($i = 0; $i < count($ownerCardsNumber); $i++) {
             if ($this->cardStatus($ownerCardsNumber[$i], $amount, 0, true)) {
                 $Refund2 = true;
@@ -57,19 +54,14 @@ trait PaymentProcessingTrait
     {
 
         $Paid = false;
-        echo "hi frome out";
         for ($i = 0; $i < count($ownerCardsNumber); $i++) {
-            echo "hi frome herer";
             if ($this->cardStatus($ownerCardsNumber[$i], 0, 0, true)) {
-                  echo("this is ");
-                echo($ownerCardsNumber[$i]);
                 $Paid = true;
                 $this->completePayment($ownerCardsNumber[$i], -1 * $amount);
                 $this->completePayment($userCardNumber, $amount);
                 break;
             }
         }
-echo($Paid);
         return $Paid;
     }
 
@@ -127,19 +119,9 @@ echo($Paid);
         if (is_null($cards)) {
             return false;
         }
-echo('input');
-            echo "<br>";
             echo($cardNumber);
         foreach ($cards as $card) {
-           // $plainCardNumber = Crypt::decryptString($card['card_number']);
-            
-          /*  echo "<br>";
-            echo('decrypted');
-            echo "<br>";
-            echo($plainCardNumber);
-            echo "<br>";*/
-
-
+        
             if (
                 $cardNumber == $card['card_number'] &&
                 (strval($cvv) === strval($card['cvv']) || $checkCvv) &&
@@ -169,8 +151,7 @@ echo('input');
         $totalNights = $end->diffInDays($start, true) + 1;
         //تم زيادة واحد  لانه هاد التابع لا يحسب اليوم الأخير 
         $totalPrice = $totalNights * $apartmentuser->priceAtBooking;
-        echo("___________");
-        echo($totalPrice);
+       
         return $totalPrice;
     }
 

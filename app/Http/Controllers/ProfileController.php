@@ -7,6 +7,7 @@ use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Profile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -43,14 +44,13 @@ class ProfileController extends Controller
         }
 
         if ($request->hasFile('avatar')) {
+            if ($profile->avatar) {
+                Storage::disk('public')->delete($profile->avatar);
+            }
             $path = $request->file('avatar')->store('users/avatar', 'public');
             $validatedData['avatar'] = $path;
         }
 
-        /*if ($request->hasFile('idPhoto')) {
-            $path = $request->file('idPhoto')->store('users/idPhoto', 'public');
-            $validatedData['idPhoto'] = $path;
-        }*/
 
         $profile->update($validatedData);
 
@@ -59,5 +59,4 @@ class ProfileController extends Controller
             'profile' => $profile
         ], 200);
     }
-    
 }
