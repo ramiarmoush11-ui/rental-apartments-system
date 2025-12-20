@@ -20,9 +20,9 @@ class ProfileUpdateRequest extends FormRequest
             'user_id' => 'prohibited',
             'firstName' => 'sometimes | string | between:3,255 | doesnt_start_with:0,1,2,3,4,5,6,7,8,9',
             'lastName' => 'sometimes | string | between:3,255 | doesnt_start_with:0,1,2,3,4,5,6,7,8,9',
-            'avatar' => 'sometimes | image | mimes:png,jpg,jpeg',
+            'avatar' => 'sometimes|image|mimes:png,jpg,jpeg',
             'birthDate' => 'sometimes|date |before:-18 years',
-            'idPhoto' => 'prohibited | image | mimes:png,jpg,jpeg '
+            'idPhoto' => 'prohibited'
         ];
     }
 }

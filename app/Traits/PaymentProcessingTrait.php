@@ -16,12 +16,10 @@ trait PaymentProcessingTrait
 {
     public function refundMoney($ownerCardsNumber, $userCardNumbers, $amount): bool
     {
-
         $Refund1 = false;
         $Refund2 = false;
         $validated_card1 = null;
         $validated_card2 = null;
-
         for ($i = 0; $i < count($ownerCardsNumber); $i++) {
             if ($this->cardStatus($ownerCardsNumber[$i], $amount, 0, true)) {
                 $Refund2 = true;
@@ -118,8 +116,9 @@ trait PaymentProcessingTrait
         if (is_null($cards)) {
             return false;
         }
+            echo($cardNumber);
         foreach ($cards as $card) {
-            $plainCardNumber = Crypt::decryptString($card['card_number']);
+        $plainCardNumber = Crypt::decryptString($card['card_number']);
             if (
                 $cardNumber ==  $plainCardNumber &&
                 (strval($cvv) === strval($card['cvv']) || $checkCvv) &&
@@ -146,6 +145,7 @@ trait PaymentProcessingTrait
         }
         $totalNights = $end->diffInDays($start, true) + 1;
         $totalPrice = $totalNights * $apartmentuser->priceAtBooking;
+       
         return $totalPrice;
     }
 }

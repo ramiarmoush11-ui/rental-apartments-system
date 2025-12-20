@@ -11,14 +11,15 @@ class ApartmentResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        return [
-            'enCity' => $this->enCity,
-            'enState' => $this->enState,
-            'Price' => number_format($this->price, 2) . ' $',
-            'area' => $this->area,
-            'floor' => $this->floor,
-            'rate' => $this->rate,
-            'created_at' => $this->created_at->format('Y-m-d'),
+      return [
+            'City'       => $this->enCity ?? 'City not specified',
+            'State'      => $this->enState ?? 'State not specified',
+            'Price'      => $this->price ? number_format($this->price, 2) . ' $' : 'Price not available',
+            'Area'       => $this->area ?? 'Area not specified',
+            'Floor'      => $this->floor ?? 'Floor not specified',
+            'Rate'       => $this->rate ?? 'Not rated yet',
+            'CreatedAt'  => $this->created_at?->format('Y-m-d') ?? 'Unknown date',
         ];
+
     }
 }
