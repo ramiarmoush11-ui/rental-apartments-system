@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -11,13 +9,23 @@ use Illuminate\Http\Request;
 class AdminUserController extends Controller
 {
     /**
-     * المستخدمين غير الموثقين (بانتظار الموافقة)
+     * Dashboard + جميع المستخدمين
+     */
+    public function index()
+    {
+        $users = User::latest()->get();
+
+        return view('admin.dashboard', compact('users'));
+    }
+
+    /**
+     * المستخدمين غير الموثقين (Pending)
      */
     public function pending()
     {
-        $users = User::where('verified', 0)->get();
+        $users = User::where('verified', 0)->latest()->get();
 
-        return view('admin.users.pending', compact('users'));
+        return view('admin.dashboard', compact('users'));
     }
 
     /**
@@ -26,7 +34,6 @@ class AdminUserController extends Controller
     public function approve($id)
     {
         $user = User::findOrFail($id);
-
         $user->verified = 1;
         $user->save();
 
@@ -42,16 +49,6 @@ class AdminUserController extends Controller
         $user->delete();
 
         return redirect()->back()->with('success', 'User rejected successfully');
-    }
-
-    /**
-     * جميع المستخدمين
-     */
-    public function index()
-    {
-        $users = User::latest()->get();
-
-        return view('admin.users.index', compact('users'));
     }
 
     /**
@@ -76,7 +73,6 @@ class AdminUserController extends Controller
             $user->banned_until = null;
         }
 
-        // سجل أسباب الحظر
         $history = $user->ban_reasons_history ?? [];
         $history[] = [
             'reason' => $request->reason ?? 'No reason',

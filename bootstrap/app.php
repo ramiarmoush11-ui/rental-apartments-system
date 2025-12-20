@@ -21,10 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => CheckRole::class,
             'verifiedAccount' => verifiedAccount::class,
             'notbanned' => CheckNotBanned::class,
-             'is_admin' => \App\Http\Middleware\IsAdmin::class,
+              'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
         $middleware->appendToGroup('api', [
-            SetLocale::class,
+            SetLocale::class
         ]);
         
     })

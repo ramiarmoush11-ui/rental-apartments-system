@@ -1,15 +1,22 @@
 <?php
 
-
+use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminUserController;
-
 use Illuminate\Support\Facades\Route;
 
-Route::get('/admin', function () {
-    return view('admin.dashboard');
-});
+Route::get('/admin/login', [AdminAuthController::class, 'showLogin'])
+    ->name('admin.login');
 
-/*Route::prefix('admin')->group(function () {
+Route::post('/admin/login', [AdminAuthController::class, 'login'])
+    ->name('admin.login.submit');
+
+Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
+    ->name('admin.logout');
+
+Route::prefix('admin')->middleware('admin')->group(function () {
+
+    Route::get('/', [AdminUserController::class, 'index'])
+        ->name('admin.dashboard');
 
     Route::get('/users', [AdminUserController::class, 'index'])
         ->name('admin.users.index');
@@ -28,4 +35,4 @@ Route::get('/admin', function () {
 
     Route::post('/users/{id}/unban', [AdminUserController::class, 'unban'])
         ->name('admin.users.unban');
-});*/
+});
