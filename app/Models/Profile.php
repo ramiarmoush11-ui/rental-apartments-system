@@ -9,6 +9,9 @@ class Profile extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+    'birthDate' => 'date',
+];
     protected $guarded = [];
 
     public function user()

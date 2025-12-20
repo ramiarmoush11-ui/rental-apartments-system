@@ -43,7 +43,7 @@ trait BookingLogicTrait
 
         if (!$FailRefund) {
             return response()->json([
-                'message' => 'Refund process failed. Please try again later.'
+                'message' => __('bookingTrait.cancel_reservation_refund_failed')
             ], 500);
         }
 
@@ -53,13 +53,13 @@ trait BookingLogicTrait
             'user_id' => $booking['user_id'],
             'type'    => 'reservation_cancelled',
             'data'    => [
-                'title'        => "Reservation cancelled on your apartment and your paid amount has been refunded. If you experience any problem with refunding money, please check the refund_money tab.",
+                'title'        => __('bookingTrait.cancel_reservation_notification_renter'),
                 'apartment_id' => $booking['apartment_id']
             ],
         ]);
 
         return response()->json([
-            'message' => 'Reservation cancelled successfully.'
+            'message' => __('bookingTrait.cancel_reservation_success')
         ], 200);
     }
 
@@ -206,10 +206,10 @@ trait BookingLogicTrait
     public function warn_ondelete($ban_count, $ban_count_ondelete)
     {
         return response()->json([
-            'message' => 'Warning!',
+            'message' => __('bookingTrait.warn_ondelete_message'),
             'ban_count_before' => $ban_count,
             'ban_count_ondelete' => $ban_count_ondelete,
-            'note' => 'Do you want to complete the deletion? You will be banned after this action.'
+            'note' => __('bookingTrait.warn_ondelete_note')
         ], 200);
     }
 
@@ -252,4 +252,5 @@ trait BookingLogicTrait
         }
         return $ban_count;
     }
+    
 }
