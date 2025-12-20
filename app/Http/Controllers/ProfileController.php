@@ -28,8 +28,8 @@ class ProfileController extends Controller
 
         $profile = Profile::create($validatedData);
         return response()->json([
-            'message' => 'proflie created successfully',
-            'proflie' => $profile
+            'message' => __('profile.created_successfully'),
+            'profile' => $profile
         ], 201);
     }
 
@@ -39,25 +39,18 @@ class ProfileController extends Controller
         $validatedData = $request->validated();
 
         if (!$profile) {
-            return response()->json(['message' => 'profile not found'], 404);
+            return response()->json(['message' => __('profile.not_found')], 404);
         }
 
         if ($request->hasFile('avatar')) {
             $path = $request->file('avatar')->store('users/avatar', 'public');
             $validatedData['avatar'] = $path;
         }
-
-        /*if ($request->hasFile('idPhoto')) {
-            $path = $request->file('idPhoto')->store('users/idPhoto', 'public');
-            $validatedData['idPhoto'] = $path;
-        }*/
-
         $profile->update($validatedData);
 
         return response()->json([
-            'message' => 'profile updated successfully',
+            'message' => __('profile.updated_successfully'),
             'profile' => $profile
         ], 200);
     }
-    
 }

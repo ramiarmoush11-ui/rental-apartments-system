@@ -8,38 +8,35 @@ use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
-    public function showNotifications() //عملتو جمع -_-
+    public function showNotifications()
     {
         $notifications = Notification::where('user_id', Auth::id())
-            ->orderByDesc('created_at') //رتبتو حسب تاريخ الانشاء تبع النوتي
+            ->orderByDesc('created_at')
             ->paginate(15);
 
         if ($notifications->getCollection()->isEmpty()) {
             return response()->json([
-                'message' => 'the notification list is empty.', //غيرت من mess to message
-                'data' => null
-            ], 204); //403 -> 204 
+                'message' => __('notification.empty'),
+                'data' => []
+            ], 200);
         }
 
-        return response()->json(['mes' => null, 'data' => $notifications]);
+        return response()->json(['message' => __('notification.list_retrieved'), 'data' => $notifications]);
     }
 
-    public function showNotification($notificationId) //غيرت الاسم من one  ل هاد
+    public function showNotification($notificationId)
     {
         $notification = Notification::where('user_id', Auth::id())
             ->where('id', $notificationId)
-            ->first(); //هون غيرت من firstOrFail ل first 
-        //ليش ؟ لانو الافضل نبعد عن كلشي استثناءات ونحن نتعامل مع كل المواضيع
+            ->first();
         if (!$notification) {
             return response()->json([
-                'message' => 'the notification not found.',
+                'message' => __('notification.not_found'),
                 'data' => null
-            ], 404); //403 -> 204 //edit number three ^__^ 204->404
+            ], 404);
         }
-        $notification->seen=true;
+        $notification->seen = true;
         $notification->save();
-         return response()->json(['mes' => null, 'data' => $notification],200);
-
+        return response()->json(['message' => __('notification.retrieved'), 'data' => $notification], 200);
     }
-    
 }

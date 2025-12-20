@@ -10,7 +10,7 @@ trait ValidatesCityAndState
         $stateKeys = array_keys($states);
 
         if (!in_array($state, $stateKeys)) {
-            $fail('The selected state is invalid.');
+            $fail(__('validation.state_invalid'));
         }
     }
 
@@ -20,13 +20,13 @@ trait ValidatesCityAndState
         $state  = $this->input('enState');
 
         if (!$state || !array_key_exists($state, $states)) {
-            $fail('The selected state is invalid or missing.');
+            $fail(__('validation.state_missing_or_invalid'));
             return;
         }
 
         $cities = $states[$state] ?? [];
         if (!in_array($city, $cities)) {
-            $fail('The selected city does not belong to the selected state.');
+            $fail(__('validation.city_not_in_state'));
         }
     }
 }

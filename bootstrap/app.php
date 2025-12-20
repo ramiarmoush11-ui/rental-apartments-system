@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckNotBanned;
 use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\verifiedAccount;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => CheckRole::class,
             'verifiedAccount' => verifiedAccount::class,
             'notbanned' => CheckNotBanned::class
+        ]);
+        $middleware->appendToGroup('api', [
+            SetLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

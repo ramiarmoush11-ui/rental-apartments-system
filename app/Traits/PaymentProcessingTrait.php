@@ -14,18 +14,14 @@ use Illuminate\Support\Facades\Storage;
 
 trait PaymentProcessingTrait
 {
-    // to pay money the th3 parameter should be +
-    // to return money the th3 parameter should be -
-
     public function refundMoney($ownerCardsNumber, $userCardNumbers, $amount): bool
     {
-        echo "kkk  ";
+
         $Refund1 = false;
         $Refund2 = false;
         $validated_card1 = null;
         $validated_card2 = null;
-        echo("____________");
-        echo($ownerCardsNumber);
+
         for ($i = 0; $i < count($ownerCardsNumber); $i++) {
             if ($this->cardStatus($ownerCardsNumber[$i], $amount, 0, true)) {
                 $Refund2 = true;
@@ -52,24 +48,18 @@ trait PaymentProcessingTrait
         }
         return false;
     }
-    //كان فيني استخدم نفس يلي فوق بس مشان غير اسماء وما نفوت بالحيط وبالاشارات
     public function payMoney($ownerCardsNumber, $userCardNumber, $amount): bool
     {
 
         $Paid = false;
-        echo "hi frome out";
         for ($i = 0; $i < count($ownerCardsNumber); $i++) {
-            echo "hi frome herer";
             if ($this->cardStatus($ownerCardsNumber[$i], 0, 0, true)) {
-                  echo("this is ");
-                echo($ownerCardsNumber[$i]);
                 $Paid = true;
                 $this->completePayment($ownerCardsNumber[$i], -1 * $amount);
                 $this->completePayment($userCardNumber, $amount);
                 break;
             }
         }
-echo($Paid);
         return $Paid;
     }
 
@@ -101,7 +91,8 @@ echo($Paid);
         }
 
         foreach ($cards as &$card) {
-            if ($cardNumber == $card['card_number']) {
+            $plainCardNumber = Crypt::decryptString($card['card_number']);
+            if ($cardNumber == $plainCardNumber) {
                 $card['balance'] -= $amount;
                 break;
             }
@@ -127,21 +118,10 @@ echo($Paid);
         if (is_null($cards)) {
             return false;
         }
-echo('input');
-            echo "<br>";
-            echo($cardNumber);
         foreach ($cards as $card) {
-           // $plainCardNumber = Crypt::decryptString($card['card_number']);
-            
-          /*  echo "<br>";
-            echo('decrypted');
-            echo "<br>";
-            echo($plainCardNumber);
-            echo "<br>";*/
-
-
+            $plainCardNumber = Crypt::decryptString($card['card_number']);
             if (
-                $cardNumber == $card['card_number'] &&
+                $cardNumber ==  $plainCardNumber &&
                 (strval($cvv) === strval($card['cvv']) || $checkCvv) &&
                 Carbon::now()->lessThanOrEqualTo(Carbon::parse($card['expiry'])) &&
                 $card['balance'] >= $Amount
@@ -149,14 +129,12 @@ echo('input');
                 return true;
             }
         }
-
         return false;
     }
 
     //helper  
     public function TotalPriceReservation($apartment_id, $start, $end, $apartmentuser)
     {
-        // $apartment_id = $apartment_user['apartment_id'];
         $apartment = Apartment::where('id', $apartment_id)->first();
         if (!$apartment) {
             return null;
@@ -167,52 +145,7 @@ echo('input');
             return null;
         }
         $totalNights = $end->diffInDays($start, true) + 1;
-        //تم زيادة واحد  لانه هاد التابع لا يحسب اليوم الأخير 
         $totalPrice = $totalNights * $apartmentuser->priceAtBooking;
-        echo("___________");
-        echo($totalPrice);
         return $totalPrice;
-    }
-
-
-
-
-    //عزبالة هدول الميثودين الخطة يلي براسي صار بدها رفرشة دائمة من الخادم وشغلات شوي متقدمة 
-    //كنت حاطط بالي اني خلي المصاري تنتقل من pending_balance to balance وقت يبلش الحجز 
-    //مشان ما خليي للمؤجر سلطة عالمصاري الا وقت يبدا الحجز رسميا
-    //بس بعد ما بلشت حسيت فوتت حالي بدوامة ورح نغير اغلب منطق الدفع بكل المشروع وانا ما بدي overkill code
-    public function addToPendingBalance($cardNumber, $amount): bool
-    {
-        $done = false;
-        $json = Storage::get('private/cards.json');
-        $cards = json_decode($json, true);
-
-        foreach ($cards as &$card) {
-            if ($cardNumber == $card['card_number']) {
-                $card['pending_balance'] += $amount;
-                $done = true;
-                break;
-            }
-        }
-        Storage::put('private/cards.json', json_encode($cards));
-        return $done;
-    }
-
-    public function confirmPendingAmount($cardNumber, $amount): bool
-    {
-        $done = false;
-        $json = Storage::get('private/cards.json');
-        $cards = json_decode($json, true);
-
-        foreach ($cards as &$card) {
-            if ($cardNumber == $card['card_number']) {
-                $card['pending_balance'] -= $amount;
-                $card['balance'] += $amount;
-                $done = true;
-                break;
-            }
-        }
-        Storage::put('private/cards.json', json_encode($cards));
-        return true;
     }
 }

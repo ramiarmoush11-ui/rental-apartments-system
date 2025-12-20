@@ -18,7 +18,7 @@ class UserController extends Controller
         $validatedData['password'] = Hash::make($validatedData['password']);
         $user = User::create($validatedData);
         return response()->json([
-            'message' => 'account created successfully',
+            'message' => __('user.register_success'),
             'user' => $user
         ], 201);
     }
@@ -27,25 +27,26 @@ class UserController extends Controller
     {
         $validatedData = $request->validated();
 
-        $emailORphone = !empty($validatedData['email']) ? 'email' : 'phone'; 
+        $emailORphone = !empty($validatedData['email']) ? 'email' : 'phone';
 
-    $Auth_data = [
-        $emailORphone => $validatedData[$emailORphone],
-        'password' => $validatedData['password']
-    ];
+        $Auth_data = [
+            $emailORphone => $validatedData[$emailORphone],
+            'password' => $validatedData['password']
+        ];
 
         if (!Auth::attempt($Auth_data)) {
-            return response()->json('invalied email or password', 401);
+            return response()->json([
+                'message' => __('user.login_failed')
+            ], 401);
         }
 
         $user = Auth::user();
 
-        
-//->plainTextToken;
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Welcome back!',
+            'message' => __('user.login_success'),
             'user' => [
                 'name' => $user->name,
                 'email' => $user->email,
@@ -57,7 +58,6 @@ class UserController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'logout successfuly'], 200);
+        return response()->json(['message' => __('user.logout_success')], 200);
     }
-    
 }
