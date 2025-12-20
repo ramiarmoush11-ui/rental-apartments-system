@@ -7,6 +7,6 @@
     'logout_success' => 'Logout successful.',
 
      // General
-    'not_found' => 'Apartment not found.',
-    'retrieved_successfully' => 'Apartment retrieved successfully.'
+    'not_found' => 'user not found.',
+    'retrieved_successfully' => 'user retrieved successfully.'
     ];

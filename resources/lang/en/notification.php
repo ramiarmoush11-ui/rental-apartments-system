@@ -8,6 +8,6 @@ return [
     'retrieved' => 'Notification retrieved successfully.',
 
      // General
-    'not_found' => 'Apartment not found.',
-    'retrieved_successfully' => 'Apartment retrieved successfully.',
+    'not_found' => 'Notification not found.',
+    'retrieved_successfully' => 'Notification retrieved successfully.',
     ];

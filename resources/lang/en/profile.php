@@ -6,6 +6,6 @@
         'updated_successfully' => 'Profile updated successfully.',
 
         // General
-        'not_found' => 'Apartment not found.',
-        'retrieved_successfully' => 'Apartment retrieved successfully.',
+        'not_found' => 'Profile not found.',
+        'retrieved_successfully' => 'Profile retrieved successfully.',
     ];
