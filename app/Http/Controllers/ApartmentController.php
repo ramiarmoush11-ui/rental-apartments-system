@@ -9,6 +9,7 @@ use App\Http\Requests\PaymentRequest;
 use App\Http\Requests\StoreApartmentRequest;
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\UpdateApartmentRequest;
+use App\Http\Resources\ApartmentResource;
 use App\Models\Apartment;
 use App\Models\Booking;
 use App\Models\Notification;
@@ -180,7 +181,7 @@ class ApartmentController extends Controller
         }
         return response()->json([
             'message' => __('apartment.list_retrieved'),
-            'data' => $apartments
+            'data' => ApartmentResource::collection($apartments)
         ], 200);
     }
     //renter

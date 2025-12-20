@@ -12,8 +12,8 @@ class ApartmentResource extends JsonResource
     public function toArray(Request $request): array
     {
       return [
-            'City'       => $this->enCity ?? 'City not specified',
-            'State'      => $this->enState ?? 'State not specified',
+            'City'       => __('city_state.'.$this->enCity) ?? 'City not specified',
+            'State'      =>  __('city_state.'.$this->enState) ?? 'State not specified',
             'Price'      => $this->price ? number_format($this->price, 2) . ' $' : 'Price not available',
             'Area'       => $this->area ?? 'Area not specified',
             'Floor'      => $this->floor ?? 'Floor not specified',
