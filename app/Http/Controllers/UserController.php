@@ -47,10 +47,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => __('user.login_success'),
-            'user' => [
-                'name' => $user->name,
-                'email' => $user->email,
-            ],
+            'user' => $user,
             'token' => $token
         ], 200);
     }

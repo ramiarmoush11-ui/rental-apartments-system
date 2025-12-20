@@ -20,6 +20,10 @@ return new class extends Migration
             $table->float('area');
             $table->integer('floor');
             $table->float('rate')->nullable();
+            $table->string('title'); 
+            $table->text('description')->nullable();
+            $table->text('address_description')->nullable(); 
+            $table->json('images')->nullable();
             $table->timestamps();
         });
     }

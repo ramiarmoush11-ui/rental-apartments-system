@@ -36,6 +36,9 @@ class ApartmentController extends Controller
             'price'   => $validated['price'],
             'area'    => $validated['area'],
             'floor'   => $validated['floor'],
+            'title'               => $validated['title'],
+            'description'         => $validated['description'],
+            'address_description' => $validated['address_description'],
         ];
         $validated_card = ['cardNumber' => $validated['cardNumber']];
 
@@ -44,6 +47,16 @@ class ApartmentController extends Controller
                 'message' => __('apartment.invalid_card'),
             ], 402);
         }
+        $images_path = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $img) {
+                $path = $img->store('apartments', 'public');
+                $images_path[] = $path;
+            }
+        }
+
+        $validated_data['images'] = $images_path;
 
         $apartment = Apartment::create($validated_data);
         Booking::create(
@@ -86,8 +99,45 @@ class ApartmentController extends Controller
                 'message' => __('apartment.not_found')
             ], 404);
         }
-        $apartment->update($request->validated());
-        $apartment->save();
+        //
+        $validated_data = $request->validated();
+
+        $FinalImages = [];
+
+        $OldImages = $apartment->images;
+        if ($OldImages) {
+            $FinalImages = $OldImages;
+        }
+
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $img) {
+                $FinalImages[] = $img->store('apartments', 'public');
+            }
+        }
+
+
+
+
+        if ($request->filled('delete_images')) {
+            foreach ($request->delete_images as $img) {
+
+                if (in_array($img, $FinalImages)) {
+                    Storage::disk('public')->delete($img);
+                }
+            }
+        }
+        if ($request->filled('delete_images')) {
+            $FinalImages = array_values(array_diff(
+                $FinalImages,
+                $request->delete_images
+            ));
+        }
+
+
+
+        $validated_data['images'] = $FinalImages;
+        $apartment->update($validated_data);
         return response()->json([
             'message' => __('apartment.updated_successfully'),
             'data' => $apartment
@@ -162,7 +212,9 @@ class ApartmentController extends Controller
                 'message' => __('apartment.not_found')
             ], 404);
         }
-
+foreach ($apartment->images ?? [] as $img) {
+    Storage::disk('public')->delete($img);
+}
         $apartment->delete();
         return response()->json([
             'message' => __('apartment.deleted_successfully')

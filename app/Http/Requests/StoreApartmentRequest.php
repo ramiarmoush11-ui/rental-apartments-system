@@ -55,6 +55,12 @@ class StoreApartmentRequest extends FormRequest
                 'required',
                 'digits_between:13,19',
             ],
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['required','string'],
+            'address_description' => ['required','string'],
+            'images' => ['sometimes', 'array'],
+            'images.*' => ['image', 'mimes:png,jpg,jpeg'],
+
         ];
     }
 }

@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Apartment extends Model
 {
     use HasFactory;
+    protected $casts = [
+        'images' => 'array',
+    ];
 
     protected $guarded = [];
 
