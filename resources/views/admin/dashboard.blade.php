@@ -30,11 +30,13 @@
                 text-gray-900 dark:text-gray-200
                 border-r border-gray-300 dark:border-slate-800 flex flex-col">
 
+    <!-- Logo -->
     <div class="h-16 flex items-center px-6 font-bold border-b
                 border-gray-300 dark:border-slate-800">
       ⚡ Admin Panel
     </div>
 
+    <!-- Navigation -->
     <nav class="p-4 space-y-2">
       <a href="{{ route('admin.users.pending') }}"
          class="block px-4 py-2 rounded hover:bg-slate-700 transition">
@@ -47,6 +49,7 @@
       </a>
     </nav>
 
+    <!-- Admin Info -->
     <div class="mt-auto border-t border-gray-300 dark:border-slate-800 p-4 flex items-center gap-3">
       <div class="w-9 h-9 rounded-full bg-slate-600 flex items-center justify-center">👤</div>
       <div class="text-sm">
@@ -54,6 +57,22 @@
         <p class="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
       </div>
     </div>
+
+    <!-- Logout -->
+    <form method="POST" action="{{ route('admin.logout') }}" class="p-4">
+      @csrf
+      <button type="submit"
+              class="flex items-center gap-2
+                     px-5 py-3
+                     rounded-full
+                     bg-red-600 text-white
+                     hover:bg-red-700
+                     transition shadow-lg">
+        🚪
+        <span class="font-medium">Logout</span>
+      </button>
+    </form>
+
   </aside>
 
   <!-- Main -->
@@ -62,7 +81,7 @@
 
     <!-- Top Bar -->
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold">Welcome Admin 👋</h1>
+      <h1 class="text-2xl font-bold">Administration Dashboard</h1>
 
       <button id="theme-toggle"
               class="w-10 h-10 rounded-full bg-slate-800 text-white
