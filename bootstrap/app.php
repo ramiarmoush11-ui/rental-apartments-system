@@ -16,14 +16,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        
         $middleware->alias([
             'role' => CheckRole::class,
             'verifiedAccount' => verifiedAccount::class,
-            'notbanned' => CheckNotBanned::class
+            'notbanned' => CheckNotBanned::class,
+             'is_admin' => \App\Http\Middleware\IsAdmin::class,
         ]);
         $middleware->appendToGroup('api', [
             SetLocale::class,
         ]);
+        
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

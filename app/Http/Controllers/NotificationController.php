@@ -29,6 +29,7 @@ class NotificationController extends Controller
         $notification = Notification::where('user_id', Auth::id())
             ->where('id', $notificationId)
             ->first();
+            
         if (!$notification) {
             return response()->json([
                 'message' => __('notification.not_found'),

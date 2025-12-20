@@ -116,7 +116,7 @@ trait PaymentProcessingTrait
         if (is_null($cards)) {
             return false;
         }
-            echo($cardNumber);
+           
         foreach ($cards as $card) {
         $plainCardNumber = Crypt::decryptString($card['card_number']);
             if (
