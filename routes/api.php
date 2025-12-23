@@ -42,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     */
     Route::prefix('profile')->controller(ProfileController::class)->group(function () {
         Route::post('/', 'store');
-        Route::post('/', 'update')->middleware('notbanned');
+        Route::put('/', 'update')->middleware('notbanned');
     });
 
     /*
