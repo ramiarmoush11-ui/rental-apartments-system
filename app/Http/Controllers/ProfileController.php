@@ -57,4 +57,19 @@ class ProfileController extends Controller
             'profile' => $profile
         ], 200);
     }
+    public function show(Request $request)
+{
+    $user = Auth::user(); 
+
+    if (!$user || !$user->profile) {
+        return response()->json([
+            'message' => __('profile.not_found')
+        ], 404);
+    }
+
+    return response()->json([
+        'profile' => $user->profile
+    ], 200);
+}
+
 }
