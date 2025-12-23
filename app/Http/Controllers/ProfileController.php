@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileStoreRequest;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Http\Resources\ProfileResource;
 use App\Models\Profile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +31,7 @@ class ProfileController extends Controller
         $profile = Profile::create($validatedData);
         return response()->json([
             'message' => __('profile.created_successfully'),
-            'profile' => $profile
+            'profile' =>new ProfileResource($profile)
         ], 201);
     }
 
@@ -54,7 +55,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => __('profile.updated_successfully'),
-            'profile' => $profile
+            'profile' => new ProfileResource($profile)
         ], 200);
     }
     public function show(Request $request)
@@ -68,7 +69,7 @@ class ProfileController extends Controller
     }
 
     return response()->json([
-        'profile' => $user->profile
+        'profile' => new ProfileResource($user->profile)
     ], 200);
 }
 
