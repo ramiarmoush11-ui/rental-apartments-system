@@ -79,7 +79,7 @@ class ApartmentController extends Controller
         ]);
         return response()->json([
             'message' =>  __('apartment.created_successfully'),
-            'data' => $apartment
+            'data' =>new  ApartmentResource($apartment)
         ], 201);
     }
     //owner
@@ -136,7 +136,7 @@ class ApartmentController extends Controller
         $apartment->update($validated_data);
         return response()->json([
             'message' => __('apartment.updated_successfully'),
-            'data' => $apartment
+            'data' =>  new ApartmentResource($apartment)
         ], 200);
     }
     //owner
@@ -242,7 +242,7 @@ class ApartmentController extends Controller
                 'data' => null
             ], 404);
         }
-        return response()->json(['message' => __('apartment.retrieved_successfully'), 'data' => $apartment], 200);
+        return response()->json(['message' => __('apartment.retrieved_successfully'), 'data' => new ApartmentResource($apartment)], 200);
     }
 
     public function filterApartments(FilterApartmentsRequest $request)
@@ -307,7 +307,7 @@ class ApartmentController extends Controller
             'message' => $results->isEmpty()
                 ? __('apartment.filter_no_results')
                 : __('apartment.filter_success'),
-            'data' => $results
+            'data' => ApartmentResource::collection($results)
         ]);
     }
 
@@ -359,7 +359,7 @@ class ApartmentController extends Controller
 
         return response()->json([
             'message' => __('apartment.favorites_retrieved'),
-            'favourites' => $favourites
+            'favourites' => ApartmentResource::collection($favourites)
         ], 200);
     }
 }

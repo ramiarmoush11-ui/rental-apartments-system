@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,7 @@ class UserController extends Controller
         $user = User::create($validatedData);
         return response()->json([
             'message' => __('user.register_success'),
-            'user' => $user
+            'user' => new UserResource($user)
         ], 201);
     }
 
@@ -47,7 +48,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => __('user.login_success'),
-            'user' => $user,
+            'user' => new UserResource($user),
             'token' => $token
         ], 200);
     }
