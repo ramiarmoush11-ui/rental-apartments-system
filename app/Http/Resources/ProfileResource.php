@@ -15,7 +15,7 @@ class ProfileResource extends JsonResource
             'LastName'  => $this->lastName ?? 'Last name not provided',
             'Avatar'    => $this->avatar ?? 'No avatar available',
             'BirthDate' => $this->birthDate ? $this->birthDate->format('Y-m-d') : 'Birth date not specified',
-            // ما منعرض idPhoto لأنه حساس ولا شو ؟
+            'IdPhoto'   => $this->idPhoto ?? null,
         ];
     }
 }

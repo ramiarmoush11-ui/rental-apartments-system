@@ -7,12 +7,17 @@ use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
- public function users()
+    public function users()
     {
-        // جلب كل المستخدمين من قاعدة البيانات
-        $users = User::all();
+        $users = User::orderBy('created_at', 'desc')->get();
 
-        // تمريرهم إلى الـ Blade
+        if ($users->isEmpty()) {
+            return view('admin.users')->with([
+                'users' => [],
+                'message' => 'No users found.'
+            ]);
+        }
+
         return view('admin.users', compact('users'));
     }
 }
