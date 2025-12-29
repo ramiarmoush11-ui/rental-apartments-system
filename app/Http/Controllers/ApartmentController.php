@@ -109,24 +109,20 @@ class ApartmentController extends Controller
             $FinalImages = $OldImages;
         }
 
-
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $img) {
                 $FinalImages[] = $img->store('apartments', 'public');
             }
         }
 
-
-
-
         if ($request->filled('delete_images')) {
             foreach ($request->delete_images as $img) {
-
                 if (in_array($img, $FinalImages)) {
                     Storage::disk('public')->delete($img);
                 }
             }
         }
+        
         if ($request->filled('delete_images')) {
             $FinalImages = array_values(array_diff(
                 $FinalImages,
@@ -212,9 +208,9 @@ class ApartmentController extends Controller
                 'message' => __('apartment.not_found')
             ], 404);
         }
-foreach ($apartment->images ?? [] as $img) {
-    Storage::disk('public')->delete($img);
-}
+        foreach ($apartment->images ?? [] as $img) {
+            Storage::disk('public')->delete($img);
+        }
         $apartment->delete();
         return response()->json([
             'message' => __('apartment.deleted_successfully')
