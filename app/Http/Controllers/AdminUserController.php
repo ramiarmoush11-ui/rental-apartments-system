@@ -6,6 +6,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class AdminUserController extends Controller
 {
@@ -23,7 +24,7 @@ class AdminUserController extends Controller
     $userData = (new UserResource($user))->toArray(request());
 
     // تأكد إنو البروفايل كمان صار Array
-    if (isset($userData['Profile']) && $userData['Profile'] instanceof \Illuminate\Http\Resources\Json\JsonResource) {
+    if (isset($userData['Profile']) && $userData['Profile'] instanceof JsonResource) {
         $userData['Profile'] = $userData['Profile']->toArray(request());
     }
 
