@@ -9,11 +9,10 @@ class PaymentResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-       return [
-            'amount'     => $this->amount ? number_format($this->amount, 2) . ' $' : 'Amount not available',
-            'CreatedAt'  => $this->created_at ? $this->created_at->format('Y-m-d') : 'Date not available',
-            //  ما منعرض cardNumber لأنه حساس
+        return [
+            'amount'    => $this->amount ? number_format($this->amount, 2) . ' $' : __('payment.amount_not_available'),
+            'CreatedAt' => $this->created_at ? $this->created_at->format('Y-m-d') : __('payment.date_not_available'),
+            // ما منعرض cardNumber لأنه حساس
         ];
-
     }
 }

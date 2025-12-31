@@ -38,4 +38,5 @@ return [
     'favorites_empty' => 'Your favorites list is empty.',
     'favorites_retrieved' => 'Favorites retrieved successfully.',
 
+    
 ];

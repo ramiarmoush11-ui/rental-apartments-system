@@ -35,4 +35,32 @@
         'favorite_not_in_list' => 'هذه الشقة غير موجودة في قائمة المفضلة.',
         'favorites_empty' => 'قائمة المفضلة فارغة.',
         'favorites_retrieved' => 'تم جلب الشقق المفضلة بنجاح.',
+     
+         // City & State
+    'city_not_specified'   => 'لم يتم تحديد المدينة',
+    'state_not_specified'  => 'لم يتم تحديد الولاية',
+
+    // Price
+    'price_not_available'  => 'السعر غير متوفر',
+
+    // Area & Floor
+    'area_not_specified'   => 'المساحة غير محددة',
+    'floor_not_specified'  => 'الطابق غير محدد',
+
+    // Rate
+    'not_rated_yet'        => 'لم يتم التقييم بعد',
+
+    // Title & Description
+    'title_not_specified'  => 'العنوان غير محدد',
+    'description_not_available' => 'الوصف غير متوفر',
+
+    // Address Description
+    'address_description_not_available' => 'وصف العنوان غير متوفر',
+
+    // Images
+    'images_not_available' => 'لا توجد صور',
+
+    // Created At
+    'unknown_date'         => 'تاريخ غير معروف',
+
     ];
