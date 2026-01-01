@@ -20,6 +20,9 @@
         'title_not_specified'  => 'العنوان غير محدد',
         'description_not_available' => 'الوصف غير متوفر',
 
+        // ID
+        'id_not_specified'    => 'المعرف غير محدد',
+
         // Address Description
         'address_description_not_available' => 'وصف العنوان غير متوفر',
 

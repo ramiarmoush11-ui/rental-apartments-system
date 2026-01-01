@@ -15,11 +15,11 @@
 
     <!-- Profile Card -->
     @php
-      $profile = $user['Profile'] ?? null;
-      $avatarPath = $profile['Avatar'] ?? null;
+      $profile = $user['profile'] ?? null;
+      $avatarPath = $profile['avatar'] ?? null;
       $avatarUrl = $avatarPath ? asset('storage/' . $avatarPath) : null;
 
-      $idPhotoPath = $profile['IdPhoto'] ?? null;
+      $idPhotoPath = $profile['idPhoto'] ?? null;
       $idPhotoUrl = $idPhotoPath ? asset('storage/' . $idPhotoPath) : null;
     @endphp
 
@@ -37,8 +37,8 @@
         @endif
 
         <h2 class="text-2xl font-bold text-indigo-600 dark:text-indigo-300">
-          {{ $profile['FirstName'] ?? 'First name not provided' }}
-          {{ $profile['LastName'] ?? 'Last name not provided' }}
+          {{ $profile['firstName'] ?? 'First name not provided' }}
+          {{ $profile['lastName'] ?? 'Last name not provided' }}
         </h2>
       </div>
 
@@ -79,17 +79,17 @@
       <h3 class="text-lg font-semibold mb-4 text-slate-700 dark:text-slate-200">📄 Account Info</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         @foreach([
-          'Name' => $user['Name'],
-          'Email' => $user['Email'],
-          'Phone' => $user['Phone'],
-          'Verified' => $user['Verified'],
-          'Role' => $user['Role'],
-          'IsBanned' => $user['IsBanned'],
-          'BanCount' => $user['BanCount'],
-          'BanType' => $user['BanType'],
-          'BannedUntil' => $user['BannedUntil'],
-          'EmailVerifiedAt' => $user['EmailVerifiedAt'],
-          'CreatedAt' => $user['CreatedAt']
+          'Name' => $user['name'],
+          'Email' => $user['email'],
+          'Phone' => $user['phone'],
+          'Verified' => $user['verified'],
+          'Role' => $user['role'],
+          'IsBanned' => $user['isBanned'],
+          'BanCount' => $user['banCount'],
+          'BanType' => $user['banType'],
+          'BannedUntil' => $user['bannedUntil'],
+          'EmailVerifiedAt' => $user['emailVerifiedAt'],
+          'CreatedAt' => $user['createdAt']
         ] as $label => $value)
           <div class="bg-gradient-to-r from-pink-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 shadow">
             <span class="block text-xs text-gray-500 dark:text-gray-300">{{ $label }}</span>

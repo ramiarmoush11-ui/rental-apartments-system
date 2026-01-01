@@ -20,6 +20,9 @@
         'title_not_specified'  => 'Title not specified',
         'description_not_available' => 'Description not available',
 
+        // ID
+        'id_not_specified'  => 'ID not available',
+
         // Address Description
         'address_description_not_available' => 'Address description not available',
 
