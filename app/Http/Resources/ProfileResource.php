@@ -11,11 +11,11 @@ class ProfileResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'firstName' => $this->firstName ?? __('user.first_name_not_provided'),
-            'lastName'  => $this->lastName ?? __('user.last_name_not_provided'),
-            'avatar'    => $this->avatar ?? __('user.no_avatar_available'),
-            'birthDate' => $this->birthDate ? $this->birthDate->format('Y-m-d') : __('user.birth_date_not_specified'),
-            'idPhoto'   => $this->idPhoto ?? __('user.id_photo_not_available'),
+            'firstName' => $this->firstName ?? __('resources.first_name_not_provided'),
+            'lastName'  => $this->lastName ?? __('resources.last_name_not_provided'),
+            'avatar'    => $this->avatar ?? __('resources.no_avatar_available'),
+            'birthDate' => $this->birthDate ? $this->birthDate->format('Y-m-d') : __('resources.birth_date_not_specified'),
+            'idPhoto'   => $this->idPhoto ?? __('resources.id_photo_not_available'),
         ];
     }
 }

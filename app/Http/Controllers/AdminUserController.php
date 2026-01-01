@@ -70,9 +70,8 @@ class AdminUserController extends Controller
             'section' => 'banned'
         ]);
     }
-    /**
-     * الموافقة على المستخدم
-     */
+  
+    
     public function approve($id)
     {
         $user = User::find($id);
@@ -86,9 +85,8 @@ class AdminUserController extends Controller
         return redirect()->back()->with('success', 'User approved successfully');
     }
 
-    /**
-     * رفض المستخدم (حذف)
-     */
+  
+    
     public function reject($id)
     {
         $user = User::find($id);
@@ -102,9 +100,7 @@ class AdminUserController extends Controller
         return redirect()->back()->with('success', 'User rejected successfully');
     }
 
-    /**
-     * حظر المستخدم
-     */
+  
     public function ban(Request $request, $id)
     {
         // تحقق من المدخلات
@@ -150,9 +146,8 @@ class AdminUserController extends Controller
         return redirect()->back()->with('success', 'User banned successfully');
     }
 
-    /**
-     * فك الحظر عن المستخدم
-     */
+   
+    
     public function unban($id)
     {
         $user = User::find($id);

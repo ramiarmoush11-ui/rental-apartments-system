@@ -97,10 +97,10 @@ class BookingController extends Controller
         }
 
         $owner_id = $owner->id;
-
+    
         Notification::create([
             'user_id' => $owner_id,
-            'type'    => 'reservation_offer',
+            'type'    => __('notification.reservation_offer'),
             'data'    => [
                 'title'        => __('booking.notification_new_offer_title'),
                 'apartment_id' => $apartment->id,
@@ -112,7 +112,7 @@ class BookingController extends Controller
 
         Notification::create([
             'user_id' => Auth::id(),
-            'type'    => 'offer_submitted',
+            'type'    => __('notification.offer_submitted'),
             'data'    => [
                 'title'        => __('booking.notification_offer_submitted_title'),
                 'apartment_id' => $apartment->id,
@@ -297,7 +297,7 @@ class BookingController extends Controller
 
         Notification::create([
             'user_id' => $owner_id,
-            'type'    => "apartment_evaluation",
+            'type'    => __('notification.apartment_evaluation'),
             'data'    => [
                 'title'        => __('booking.evaluate_apartment_notification_title'),
                 'apartment_id' => $apartmentId,
@@ -335,7 +335,7 @@ class BookingController extends Controller
 
         Notification::create([
             'user_id' => $apartmentuser['user_id'],
-            'type'    => 'reservation_needs_payment',
+            'type'    => __('notification.reservation_needs_payment'),
             'data'    => [
                 'title'        => __('booking.mark_reservation_notification_title'),
                 'apartment_id' => $apartmentuser['apartment_id'],
@@ -424,7 +424,7 @@ class BookingController extends Controller
 
         Notification::create([
             'user_id' => $apartment_user->user_id,
-            'type'    => 'reservation_canceled',
+            'type'    => __('notification.reservation_canceled'),
             'data'    => [
                 'title'        => __('booking.cancel_pending_or_awaiting_notification_renter', ['apartmentId' => $apartmentId]),
                 'apartment_id' => $apartmentId,
@@ -433,7 +433,7 @@ class BookingController extends Controller
 
         Notification::create([
             'user_id' => $apartmentOwner->id,
-            'type'    => 'reservation_canceled',
+            'type'    => __('notification.reservation_canceled'),
             'data'    => [
                 'title'        => __('booking.cancel_pending_or_awaiting_notification_owner', ['apartmentId' => $apartmentId]),
                 'apartment_id' => $apartmentId,
@@ -492,7 +492,7 @@ class BookingController extends Controller
 
         Notification::create([
             'user_id' => $booking->user_id,
-            'type'    => 'accepted_reservation_canceled',
+            'type'    => __('notification.accepted_reservation_canceled'),
             'data'    => [
                 'title'        => __('booking.cancel_accepted_notification_renter', ['apartmentId' => $apartmentId]),
                 'apartment_id' => $apartmentId,
@@ -501,7 +501,7 @@ class BookingController extends Controller
 
         Notification::create([
             'user_id' => $apartmentOwner->id,
-            'type'    => 'accepted_reservation_canceled',
+            'type'    => __('notification.accepted_reservation_canceled'),
             'data'    => [
                 'title'        => __('booking.cancel_accepted_notification_owner', ['apartmentId' => $apartmentId]),
                 'apartment_id' => $apartmentId,
@@ -583,7 +583,7 @@ class BookingController extends Controller
 
         Notification::create([
             'user_id' => Auth::id(),
-            'type'    => 'payment_completed',
+            'type'    => __('notification.payment_completed'),
             'data'    => [
                 'title'        => __('booking.final_payment_notification_renter'),
                 'apartment_id' => $apartment->id,
@@ -594,7 +594,7 @@ class BookingController extends Controller
 
         Notification::create([
             'user_id' => $owner->id,
-            'type'    => 'reservation_payment_received',
+            'type'    =>__('notification.reservation_payment_received'),
             'data'    => [
                 'title'        => __('booking.final_payment_notification_owner'),
                 'apartment_id' => $apartment->id,

@@ -83,8 +83,8 @@ return [
 
     //////////////////////////////////////////cancel pending or awaiting payment reservation//////////////////////////////////
     'cancel_pending_or_awaiting_refund_failed' => 'فشلت عملية استرداد العربون. يرجى المحاولة لاحقًا.',
-    'cancel_pending_or_awaiting_notification_renter' => 'تم إلغاء حجزك للشقة رقم #:apartmentId. أي عربون مدفوع قد تم استرداده إلى بطاقتك.',
-    'cancel_pending_or_awaiting_notification_owner' => 'تم إلغاء حجز معلّق/بانتظار الدفع على شقتك رقم #:apartmentId من قبل المستأجر.',
+    'cancel_pending_or_awaiting_notification_renter' => 'تم إلغاء حجزك للشقة رقم  :apartmentId. أي عربون مدفوع قد تم استرداده إلى بطاقتك.',
+    'cancel_pending_or_awaiting_notification_owner' => 'تم إلغاء حجز معلّق/بانتظار الدفع على شقتك رقم :apartmentId من قبل المستأجر.',
     'cancel_pending_or_awaiting_success' => 'تم إلغاء الحجز بنجاح.',
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -93,8 +93,8 @@ return [
     'cancel_accepted_active_no_refund' => 'تم إلغاء الحجز خلال فترة النشاط - بدون استرداد.',
     'cancel_accepted_within_3_days' => 'تم إلغاء الحجز خلال الثلاثة أيام الأخيرة قبل البداية - العربون غير مسترد.',
     'cancel_accepted_in_advance' => 'تم إلغاء الحجز بشكل مبكر - العربون غير مسترد.',
-    'cancel_accepted_notification_renter' => 'تم إلغاء حجزك المقبول للشقة رقم #:apartmentId. أي عربون مدفوع قد تم استرداده إلى بطاقتك.',
-    'cancel_accepted_notification_owner' => 'تم إلغاء حجز مقبول على شقتك رقم #:apartmentId من قبل المستأجر.',
+    'cancel_accepted_notification_renter' => 'تم إلغاء حجزك المقبول للشقة رقم :apartmentId. أي عربون مدفوع قد تم استرداده إلى بطاقتك.',
+    'cancel_accepted_notification_owner' => 'تم إلغاء حجز مقبول على شقتك رقم :apartmentId من قبل المستأجر.',
     'cancel_accepted_success' => 'تم إلغاء الحجز بنجاح.',
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
