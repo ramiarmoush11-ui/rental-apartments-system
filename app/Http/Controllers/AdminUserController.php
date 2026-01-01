@@ -6,14 +6,14 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-
+use Illuminate\Http\Resources\Json\JsonResource;
 class AdminUserController extends Controller
 {
 
 
    public function show($id)
 {
-    $user = User::with(['profile', 'bookings', 'payments'])->find($id);
+    $user = User::with(['profile'])->find($id);
 
     if (!$user) {
         return redirect()->back()->withErrors(['error' => 'User not found']);
@@ -37,7 +37,7 @@ class AdminUserController extends Controller
             ->where('enRole', '!=', 'Admin')
             ->where('isbanned', false)
             ->latest()
-            ->paginate(10);
+            ->get();
 
         return view('admin.dashboard', [
             'users' => $users,
@@ -63,7 +63,7 @@ class AdminUserController extends Controller
         $users = User::where('isbanned', true)
             ->where('enRole', '!=', 'Admin')
             ->latest()
-            ->paginate(10);
+            ->get();
 
         return view('admin.dashboard', [
             'users' => $users,

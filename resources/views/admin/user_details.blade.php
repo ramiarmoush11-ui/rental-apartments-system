@@ -46,9 +46,9 @@
       <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-200">📋 Profile Info</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         @foreach([
-          'First Name' => $profile['FirstName'] ?? 'Not provided',
-          'Last Name' => $profile['LastName'] ?? 'Not provided',
-          'Birth Date' => $profile['BirthDate'] ?? 'Not specified'
+          'First Name' => $profile['firstName'] ?? 'Not provided',
+          'Last Name' => $profile['lastName'] ?? 'Not provided',
+          'Birth Date' => $profile['birthDate'] ?? 'Not specified'
         ] as $label => $value)
           <div class="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 shadow">
             <span class="block text-xs text-gray-500 dark:text-gray-300">{{ $label }}</span>
