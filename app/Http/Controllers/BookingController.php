@@ -81,7 +81,7 @@ class BookingController extends Controller
             'endTerm' => $validated['endTerm'],
             'priceAtBooking' => $apartment->price
         ]);
- 
+
         Payment::create([
             'user_id' => Auth::id(),
             'booking_id'  => $apartmentUser->id,
@@ -97,12 +97,12 @@ class BookingController extends Controller
         }
 
         $owner_id = $owner->id;
-    
+
         Notification::create([
             'user_id' => $owner_id,
-            'type'    =>'reservation_offer',
+            'type'    => 'reservation_offer',
             'data'    => [
-               // 'title'        => __('booking.notification_new_offer_title'),
+                // 'title'        => __('booking.notification_new_offer_title'),
                 'apartment_id' => $apartment->id,
                 'user_id'      => Auth::id(),
                 'startTerm'    => $validated['startTerm'],
@@ -114,7 +114,7 @@ class BookingController extends Controller
             'user_id' => Auth::id(),
             'type'    => 'offer_submitted',
             'data'    => [
-               // 'title'        => __('booking.notification_offer_submitted_title'),
+                // 'title'        => __('booking.notification_offer_submitted_title'),
                 'apartment_id' => $apartment->id,
                 'startTerm'    => $validated['startTerm'],
                 'endTerm'      => $validated['endTerm'],
@@ -161,7 +161,7 @@ class BookingController extends Controller
             'data' => BookingResource::collection($reservationsOnApartment)
         ], 200);
     }
-
+    //owner
     public function ShowAllReservationsHistory()
     {
         $Owned_apartments = Booking::where('user_id', Auth::id())
@@ -243,6 +243,185 @@ class BookingController extends Controller
             'data' => new BookingResource($PendingReservations)
         ], 200);
     }
+    // owner
+    public function showPendingAndAwaitingReservations()
+    {
+        $owned_apartment_ids = Booking::where('user_id', Auth::id())
+            ->where('enType', 'Owner')
+            ->pluck('apartment_id');
+
+        $reservations = Booking::whereIn('apartment_id', $owned_apartment_ids)
+            ->where('enType', 'Renter')
+            ->whereIn('enStatus', ['Pending', 'AwaitingPayment'])
+            ->orderBy('startTerm', 'asc')
+            ->with(['apartment', 'user'])
+            ->get();
+
+        if ($reservations->isEmpty()) {
+            return response()->json([
+                'message' => __('booking.owner_pending_empty'),
+                'data' => []
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => __('booking.owner_pending_success'),
+            'data' => BookingResource::collection($reservations)
+        ], 200);
+    }
+
+    // owner
+    public function showActiveAcceptedReservations()
+    {
+        $now = Carbon::now();
+
+        $owned_apartment_ids = Booking::where('user_id', Auth::id())
+            ->where('enType', 'Owner')
+            ->pluck('apartment_id');
+
+        $reservations = Booking::whereIn('apartment_id', $owned_apartment_ids)
+            ->where('enType', 'Renter')
+            ->where('enStatus', 'Accepted')
+            ->whereDate('endTerm', '>=', $now)
+            ->orderBy('startTerm', 'asc')
+            ->with(['apartment', 'user'])
+            ->get();
+
+        if ($reservations->isEmpty()) {
+            return response()->json([
+                'message' => __('booking.owner_active_empty'),
+                'data' => []
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => __('booking.owner_active_success'),
+            'data' => BookingResource::collection($reservations)
+        ], 200);
+    }
+    // owner
+    public function showCancelledAndFinishedReservations()
+    {
+        $now = Carbon::now();
+
+        $owned_apartment_ids = Booking::where('user_id', Auth::id())
+            ->where('enType', 'Owner')
+            ->pluck('apartment_id');
+
+        $cancelled_reservations = Booking::whereIn('apartment_id', $owned_apartment_ids)
+            ->where('enType', 'Renter')
+            ->where('enStatus', 'Cancelled')
+            ->with(['apartment', 'user'])
+            ->get();
+
+        $finished_reservations = Booking::whereIn('apartment_id', $owned_apartment_ids)
+            ->where('enType', 'Renter')
+            ->where('enStatus', 'Accepted')
+            ->whereDate('endTerm', '<', $now)
+            ->with(['apartment', 'user'])
+            ->get();
+
+        $reservations = $cancelled_reservations
+            ->merge($finished_reservations)
+            ->sortBy('startTerm')
+            ->values();
+
+        if ($reservations->isEmpty()) {
+            return response()->json([
+                'message' => __('booking.owner_history_empty'),
+                'data' => []
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => __('booking.owner_history_success'),
+            'data' => BookingResource::collection($reservations)
+        ], 200);
+    }
+
+    // renter
+    public function showPendingAndAwaitingReservationsRenter()
+    {
+        $reservations = Booking::where('user_id', Auth::id())
+            ->where('enType', 'Renter')
+            ->whereIn('enStatus', ['Pending', 'AwaitingPayment'])
+            ->orderBy('startTerm', 'asc')
+            ->with(['apartment', 'user'])
+            ->get();
+
+        if ($reservations->isEmpty()) {
+            return response()->json([
+                'message' => __('booking.renter_pending_empty'),
+                'data' => []
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => __('booking.renter_pending_success'),
+            'data' => BookingResource::collection($reservations)
+        ], 200);
+    }
+    // renter
+    public function showActiveAcceptedReservationsRenter()
+    {
+        $now = Carbon::now();
+
+        $reservations = Booking::where('user_id', Auth::id())
+            ->where('enType', 'Renter')
+            ->where('enStatus', 'Accepted')
+            ->whereDate('endTerm', '>=', $now)
+            ->orderBy('startTerm', 'asc')
+            ->with(['apartment', 'user'])
+            ->get();
+
+        if ($reservations->isEmpty()) {
+            return response()->json([
+                'message' => __('booking.renter_active_empty'),
+                'data' => []
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => __('booking.renter_active_success'),
+            'data' => BookingResource::collection($reservations)
+        ], 200);
+    }
+    // renter
+    public function showCancelledAndFinishedReservationsRenter()
+    {
+        $now = Carbon::now();
+
+        $cancelled = Booking::where('user_id', Auth::id())
+            ->where('enType', 'Renter')
+            ->where('enStatus', 'Cancelled')
+            ->with(['apartment', 'user'])
+            ->get();
+
+        $finished = Booking::where('user_id', Auth::id())
+            ->where('enType', 'Renter')
+            ->where('enStatus', 'Accepted')
+            ->whereDate('endTerm', '<', $now)
+            ->with(['apartment', 'user'])
+            ->get();
+
+        $reservations = $cancelled
+            ->merge($finished)
+            ->sortBy('startTerm')
+            ->values();
+
+        if ($reservations->isEmpty()) {
+            return response()->json([
+                'message' => __('booking.renter_history_empty'),
+                'data' => []
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => __('booking.renter_history_success'),
+            'data' => BookingResource::collection($reservations)
+        ], 200);
+    }
+
 
     //التقييم لازم يكون rate + comment 
     public function EvaluateApartment($apartmentId, Request $request)
@@ -299,7 +478,7 @@ class BookingController extends Controller
             'user_id' => $owner_id,
             'type'    => 'apartment_evaluation',
             'data'    => [
-           //     'title'        => __('booking.evaluate_apartment_notification_title'),
+                //     'title'        => __('booking.evaluate_apartment_notification_title'),
                 'apartment_id' => $apartmentId,
                 'user_id'      => Auth::id(),
                 'rate'         => $rate
@@ -337,7 +516,7 @@ class BookingController extends Controller
             'user_id' => $apartmentuser['user_id'],
             'type'    => 'reservation_needs_payment',
             'data'    => [
-           //     'title'        => __('booking.mark_reservation_notification_title'),
+                //     'title'        => __('booking.mark_reservation_notification_title'),
                 'apartment_id' => $apartmentuser['apartment_id'],
                 'Reservation'  => $apartmentuser
             ],
@@ -426,7 +605,7 @@ class BookingController extends Controller
             'user_id' => $apartment_user->user_id,
             'type'    => 'pending_reservation_canceled_renter',
             'data'    => [
-             //   'title'        => __('booking.cancel_pending_or_awaiting_notification_renter', ['apartmentId' => $apartmentId]),
+                //   'title'        => __('booking.cancel_pending_or_awaiting_notification_renter', ['apartmentId' => $apartmentId]),
                 'apartment_id' => $apartmentId,
             ],
         ]);
@@ -435,7 +614,7 @@ class BookingController extends Controller
             'user_id' => $apartmentOwner->id,
             'type'    => 'pending_reservation_canceled_owner',
             'data'    => [
-            //    'title'        => __('booking.cancel_pending_or_awaiting_notification_owner', ['apartmentId' => $apartmentId]),
+                //    'title'        => __('booking.cancel_pending_or_awaiting_notification_owner', ['apartmentId' => $apartmentId]),
                 'apartment_id' => $apartmentId,
                 'renter_id'    => $apartment_user->user_id,
             ],
@@ -494,7 +673,7 @@ class BookingController extends Controller
             'user_id' => $booking->user_id,
             'type'    => 'accepted_reservation_canceled_renter',
             'data'    => [
-             //   'title'        => __('booking.cancel_accepted_notification_renter', ['apartmentId' => $apartmentId]),
+                //   'title'        => __('booking.cancel_accepted_notification_renter', ['apartmentId' => $apartmentId]),
                 'apartment_id' => $apartmentId,
             ],
         ]);
@@ -503,7 +682,7 @@ class BookingController extends Controller
             'user_id' => $apartmentOwner->id,
             'type'    => 'accepted_reservation_canceled_owner',
             'data'    => [
-            //    'title'        => __('booking.cancel_accepted_notification_owner', ['apartmentId' => $apartmentId]),
+                //    'title'        => __('booking.cancel_accepted_notification_owner', ['apartmentId' => $apartmentId]),
                 'apartment_id' => $apartmentId,
                 'renter_id'    => $booking->user_id,
             ],
@@ -585,7 +764,7 @@ class BookingController extends Controller
             'user_id' => Auth::id(),
             'type'    => 'payment_completed_renter',
             'data'    => [
-            //    'title'        => __('booking.final_payment_notification_renter'),
+                //    'title'        => __('booking.final_payment_notification_renter'),
                 'apartment_id' => $apartment->id,
             ],
         ]);
@@ -594,9 +773,9 @@ class BookingController extends Controller
 
         Notification::create([
             'user_id' => $owner->id,
-            'type'    =>'payment_completed_owner',
+            'type'    => 'payment_completed_owner',
             'data'    => [
-             //   'title'        => __('booking.final_payment_notification_owner'),
+                //   'title'        => __('booking.final_payment_notification_owner'),
                 'apartment_id' => $apartment->id,
             ],
         ]);

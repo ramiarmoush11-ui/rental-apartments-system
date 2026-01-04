@@ -11,6 +11,7 @@ class BookingResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'booking_id' => $this->id,
             'enType'      => $this->enType ?? __('resources.unknown_type'),
             'enStatus'    => $this->enStatus ?? __('resources.unknown_status'),
             'rate'        => $this->rate ?? __('resources.not_rated_yet'),

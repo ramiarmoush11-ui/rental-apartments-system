@@ -105,5 +105,27 @@ return [
     'final_payment_notification_renter' => 'Payment completed successfully.',
     'final_payment_notification_owner' => 'The renter has completed the payment for your apartment.',
     'final_payment_success' => 'Payment completed successfully. You can now receive the apartment at any time.',
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////show reservations (owner)////////////////////////////////////////////////////////////
+    'owner_pending_empty'   => 'There are no pending or awaiting payment reservations.',
+    'owner_pending_success' => 'Pending and awaiting payment reservations retrieved successfully.',
+
+    'owner_active_empty'    => 'There are no active accepted reservations at the moment.',
+    'owner_active_success'  => 'Active accepted reservations retrieved successfully.',
+
+    'owner_history_empty'   => 'There are no cancelled or finished reservations.',
+    'owner_history_success' => 'Reservation history retrieved successfully.',
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////show reservations (renter)///////////////////////////////////////////////////////////////////////////////////////////////
+    'renter_pending_empty'  => 'You have no pending or awaiting payment reservations.',
+    'renter_pending_success' => 'Pending reservations retrieved successfully.',
+
+    'renter_active_empty'   => 'You have no active reservations.',
+    'renter_active_success' => 'Active reservations retrieved successfully.',
+
+    'renter_history_empty'  => 'You have no past reservations.',
+    'renter_history_success' => 'Reservation history retrieved successfully.',
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 ];

@@ -58,7 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     |-------------------- Apartments --------------------
     */
     Route::prefix('apartments')->group(function () {
- 
+
         // Apartment CRUD
         Route::controller(ApartmentController::class)->group(function () {
             Route::post('/', 'store')->middleware(['notbanned', 'verifiedAccount']);
@@ -79,6 +79,9 @@ Route::middleware('auth:sanctum')->group(function () {
             /*
             |-------------------- Owner --------------------
             */
+            Route::get('/owner/pendingAwaitin', 'showPendingAndAwaitingReservations');
+            Route::get('/owner/active', 'showActiveAcceptedReservations');
+            Route::get('/owner/history', 'showCancelledAndFinishedReservations');
             Route::get('/{apartmentId}/reservations', 'Show_Reservations')->middleware('notbanned');
             Route::get('/reservations/history', 'ShowAllReservationsHistory');
             Route::get('/reservations/pending', 'ShowAllPendingReservations')->middleware('notbanned');
@@ -88,11 +91,14 @@ Route::middleware('auth:sanctum')->group(function () {
             /*
             |-------------------- Renter --------------------
             */
+            Route::get('/renter/pending', 'showPendingAndAwaitingReservationsRenter');
+            Route::get('/renter/active', 'showActiveAcceptedReservationsRenter');
+            Route::get('/renter/history', 'showCancelledAndFinishedReservationsRenter');
             Route::post('/{apartmentId}/offer', 'offerApartment')->middleware(['notbanned', 'verifiedAccount']);
             Route::post('/reservations/{BookingId}/final-payment', 'finalprocessPayment')->middleware(['notbanned', 'verifiedAccount']);
             Route::get('/reservations/awaiting-payment', 'showReservationsAwaitingPayment')->middleware('notbanned');
             Route::post('/{apartmentId}/evaluate', 'EvaluateApartment')->middleware(['notbanned', 'verifiedAccount']);
-            Route::post('/reservations/{apartmentUserId}/cancel', 'userCancelReservation')->middleware(['notbanned', 'verifiedAccount']);//
+            Route::post('/reservations/{apartmentUserId}/cancel', 'userCancelReservation')->middleware(['notbanned', 'verifiedAccount']); //
         });
     });
 });
