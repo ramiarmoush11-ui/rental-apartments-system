@@ -22,7 +22,7 @@ return [
 
     // معالجة العرض
     'offer_process_failed'   => 'فشل في معالجة عرض الحجز لهذه الشقة.',
-
+ 
     // الإشعارات
     'notification_new_offer_title' => 'عرض جديد لشقتك.',
     'notification_offer_submitted_title' => 'تم إرسال عرضك بنجاح. يرجى انتظار موافقة المالك.',

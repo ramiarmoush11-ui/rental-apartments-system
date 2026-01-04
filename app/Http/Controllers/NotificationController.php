@@ -21,7 +21,16 @@ class NotificationController extends Controller
             ], 200);
         }
 
-        return response()->json(['message' => __('notification.list_retrieved'), 'data' => $notifications]);
+        // Add translated title for each notification
+        $notifications->getCollection()->transform(function ($notification) {
+            $notification->title = __('notification.' . $notification->type);
+            return $notification;
+        });
+
+        return response()->json([
+            'message' => __('notification.list_retrieved'),
+            'data' => $notifications
+        ], 200);
     }
 
     public function showNotification($notificationId)
@@ -29,15 +38,23 @@ class NotificationController extends Controller
         $notification = Notification::where('user_id', Auth::id())
             ->where('id', $notificationId)
             ->first();
-            
+
         if (!$notification) {
             return response()->json([
                 'message' => __('notification.not_found'),
                 'data' => null
             ], 404);
         }
+
         $notification->seen = true;
         $notification->save();
-        return response()->json(['message' => __('notification.retrieved'), 'data' => $notification], 200);
+
+        // Add translated title
+        $notification->title = __('notification.' . $notification->type);
+
+        return response()->json([
+            'message' => __('notification.retrieved'),
+            'data' => $notification
+        ], 200);
     }
 }

@@ -11,14 +11,22 @@ return [
    'not_found' => 'Notification not found.',
    'retrieved_successfully' => 'Notification retrieved successfully.',
 
-   //booking controller 
-   'reservation_offer'            => 'New reservation offer',
-   'offer_submitted'              => 'Offer submitted',
-   'apartment_evaluation'         => 'Apartment evaluation',
-   'reservation_needs_payment'    => 'Reservation requires payment',
-   'reservation_canceled'         => 'Reservation canceled',
-   'accepted_reservation_canceled' => 'Accepted reservation canceled',
-   'payment_completed'            => 'Payment completed',
-   'reservation_payment_received' => 'Reservation payment received',
+     // Shared notifications
+    'reservation_offer'                 => 'You have a new offer for your apartment.',
+    'offer_submitted'                   => 'Your offer has been submitted successfully. Please wait for the owner’s approval.',
+    'apartment_evaluation'              => 'Your apartment has received a new rating.',
+    'reservation_needs_payment'         => 'Your reservation has been approved. Please complete the payment to finalize the process.',
 
-];
+    // Pending / Awaiting Payment cancellations
+    'pending_reservation_canceled_renter' => 'Your reservation for apartment number :apartmentId has been canceled. Any paid deposit has been refunded to your card.',
+    'pending_reservation_canceled_owner'  => 'A pending or awaiting-payment reservation for your apartment number :apartmentId has been canceled by the renter.',
+
+    // Accepted reservation cancellations
+    'accepted_reservation_canceled_renter' => 'Your accepted reservation for apartment number :apartmentId has been canceled. Any paid deposit has been refunded to your card.',
+    'accepted_reservation_canceled_owner'  => 'An accepted reservation for your apartment number :apartmentId has been canceled by the renter.',
+
+    // Payment notifications
+    'payment_completed_renter'          => 'Your payment has been completed successfully.',
+    'payment_completed_owner'           => 'The renter has completed the payment for your apartment.',
+
+  ];
