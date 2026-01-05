@@ -65,6 +65,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/{apartmentId}', 'update')->middleware('notbanned');
             Route::delete('/{apartmentId}', 'delete')->middleware('notbanned');
 
+            Route::get('/owner', 'getOwnerApartments');
+
             /*
             |-------------------- Favorites --------------------
             */

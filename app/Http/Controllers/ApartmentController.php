@@ -79,7 +79,7 @@ class ApartmentController extends Controller
         ]);
         return response()->json([
             'message' =>  __('apartment.created_successfully'),
-            'data' =>new  ApartmentResource($apartment)
+            'data' => new  ApartmentResource($apartment)
         ], 201);
     }
     //owner
@@ -122,7 +122,7 @@ class ApartmentController extends Controller
                 }
             }
         }
-        
+
         if ($request->filled('delete_images')) {
             $FinalImages = array_values(array_diff(
                 $FinalImages,
@@ -243,6 +243,28 @@ class ApartmentController extends Controller
             ], 404);
         }
         return response()->json(['message' => __('apartment.retrieved_successfully'), 'data' => new ApartmentResource($apartment)], 200);
+    }
+
+
+    public function getOwnerApartments()
+    {
+        $owned_apartment_ids = Booking::where('user_id', Auth::id())
+            ->where('enType', 'Owner')
+            ->pluck('apartment_id');
+
+        $apartments = Apartment::whereIn('id', $owned_apartment_ids)->get();
+
+        if ($apartments->isEmpty()) {
+            return response()->json([
+                'message' => __('apartment.list_empty'),
+                'data' => []
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => __('apartment.list_retrieved'),
+            'data' => ApartmentResource::collection($apartments)
+        ], 200);
     }
 
     public function filterApartments(FilterApartmentsRequest $request)
