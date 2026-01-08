@@ -148,7 +148,7 @@ class BookingController extends Controller
             ->orderBy('startTerm', 'asc')
             ->where('enType', 'Renter')
             ->with(['apartment', 'user'])
-            ->get();
+            ->paginate(15);
 
         if ($reservationsOnApartment->isEmpty()) {
             return response()->json([
@@ -174,7 +174,7 @@ class BookingController extends Controller
             ->where('enType', 'Renter')
             ->orderBy('startTerm', 'asc')
             ->with(['apartment', 'user'])
-            ->get();
+            ->paginate(15);
 
         if ($reservationsOnApartments->isEmpty()) {
             return response()->json([
@@ -203,7 +203,7 @@ class BookingController extends Controller
             ->where('enType', 'Renter')
             ->orderBy('startTerm', 'asc')
             ->with(['apartment', 'user'])
-            ->get();
+            ->paginate(15);
 
         if ($reservationsOnApartments->isEmpty()) {
             return response()->json([
@@ -255,7 +255,7 @@ class BookingController extends Controller
             ->whereIn('enStatus', ['Pending', 'AwaitingPayment'])
             ->orderBy('startTerm', 'asc')
             ->with(['apartment', 'user'])
-            ->get();
+            ->paginate(15);
 
         if ($reservations->isEmpty()) {
             return response()->json([
@@ -285,7 +285,7 @@ class BookingController extends Controller
             ->whereDate('endTerm', '>=', $now)
             ->orderBy('startTerm', 'asc')
             ->with(['apartment', 'user'])
-            ->get();
+            ->paginate(15);
 
         if ($reservations->isEmpty()) {
             return response()->json([
@@ -347,7 +347,7 @@ class BookingController extends Controller
             ->whereIn('enStatus', ['Pending', 'AwaitingPayment'])
             ->orderBy('startTerm', 'asc')
             ->with(['apartment', 'user'])
-            ->get();
+            ->paginate(15);
 
         if ($reservations->isEmpty()) {
             return response()->json([
@@ -372,7 +372,7 @@ class BookingController extends Controller
             ->whereDate('endTerm', '>=', $now)
             ->orderBy('startTerm', 'asc')
             ->with(['apartment', 'user'])
-            ->get();
+            ->paginate(15);
 
         if ($reservations->isEmpty()) {
             return response()->json([
@@ -534,7 +534,7 @@ class BookingController extends Controller
             ->where('enType', 'Renter')
             ->where('enStatus', 'AwaitingPayment')
             ->with(['apartment', 'user'])
-            ->get();
+            ->paginate(15);
 
         if ($booking->isEmpty()) {
             return response()->json([

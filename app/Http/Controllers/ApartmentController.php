@@ -252,7 +252,7 @@ class ApartmentController extends Controller
             ->where('enType', 'Owner')
             ->pluck('apartment_id');
 
-        $apartments = Apartment::whereIn('id', $owned_apartment_ids)->get();
+        $apartments = Apartment::whereIn('id', $owned_apartment_ids)->paginate(15);
 
         if ($apartments->isEmpty()) {
             return response()->json([
@@ -324,7 +324,7 @@ class ApartmentController extends Controller
             $query->orderBy('price', $data['order'] === 'asc' ? 'asc' : 'desc');
         }
 
-        $results = $query->get();
+        $results = $query->paginate(15);
         return response()->json([
             'message' => $results->isEmpty()
                 ? __('apartment.filter_no_results')
