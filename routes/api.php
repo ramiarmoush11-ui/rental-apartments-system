@@ -89,6 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/reservations/pending', 'ShowAllPendingReservations')->middleware('notbanned');
             Route::get('/reservations/{BookingId}/pending', 'ShowOnePendingReservations')->middleware('notbanned');
             Route::post('/reservations/{BookingId}/awaiting-payment', 'markReservationAwaitingPayment')->middleware('notbanned');
+            Route::post('/reservations/{BookingId}/reject', 'rejectReservation')->middleware('notbanned');
 
             /*
             |-------------------- Renter --------------------

@@ -127,4 +127,12 @@ return [
     'renter_history_empty'  => 'لا يوجد لديك سجل حجوزات سابق.',
     'renter_history_success' => 'تم جلب سجل الحجوزات بنجاح.',
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // reject reservation
+    'reject_reservation_not_found'      => 'لم يتم العثور على الحجز المطلوب.',
+    'reject_reservation_unauthorized'   => 'غير مصرح لك برفض هذا الحجز.',
+    'reject_reservation_refund_failed'  => 'فشل استرداد العربون عند رفض الحجز.',
+    'reject_reservation_success'        => 'تم رفض الحجز بنجاح.',
+
+
 ];

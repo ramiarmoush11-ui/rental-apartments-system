@@ -127,5 +127,12 @@ return [
     'renter_history_success' => 'Reservation history retrieved successfully.',
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    //raject resravtion 
+    'reject_reservation_not_found'      => 'Reservation not found.',
+    'reject_reservation_unauthorized'   => 'You are not authorized to reject this reservation.',
+    'reject_reservation_refund_failed'  => 'Failed to refund the deposit when rejecting the reservation.',
+    'reject_reservation_success'        => 'The reservation has been rejected successfully.',
+
+
 
 ];

@@ -527,6 +527,57 @@ class BookingController extends Controller
         ], 200);
     }
 
+    public function rejectReservation($BookingId)
+    {
+        $booking = Booking::where('id', $BookingId)->first();
+
+        if (!$booking) {
+            return response()->json([
+                'message' => __('booking.reject_reservation_not_found')
+            ], 404);
+        }
+
+        $owner = $this->getApartmentOwner($booking['apartment_id']);
+
+        if (!$owner || $owner->id != Auth::id()) {
+            return response()->json([
+                'message' => __('booking.reject_reservation_unauthorized')
+            ], 403);
+        }
+
+        $totalNights = $booking->endTerm->diffInDays($booking->startTerm, true) + 1;
+        $totalPrice = $totalNights * $booking->priceAtBooking;
+        $deposit = $this->calculateDeposit($totalPrice);
+
+        $Payments = Auth::user()->payments;
+        $renterCardNumbers = $Payments->pluck('cardNumber');
+
+
+        $ownerCardsNumber = $this->getOwnerCardsNumber($booking->apartment_id);
+
+        if (!($this->refundMoney($ownerCardsNumber, $renterCardNumbers, $deposit))) {
+            return response()->json([
+                'message' => __('booking.reject_reservation_refund_failed')
+            ], 500);
+        }
+
+        $booking->update(['enStatus' => 'Cancelled']);
+
+
+        Notification::create([
+            'user_id' => $booking['user_id'],
+            'type'    => 'reservation_rejected',
+            'data'    => [
+                'apartment_id' => $booking['apartment_id'],
+                'Reservation'  => $booking
+            ],
+        ]);
+
+        return response()->json([
+            'message' => __('booking.reject_reservation_success')
+        ], 200);
+    }
+
     //renter
     public function showReservationsAwaitingPayment()
     {
