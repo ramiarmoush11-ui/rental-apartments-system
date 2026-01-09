@@ -549,8 +549,8 @@ class BookingController extends Controller
         $totalPrice = $totalNights * $booking->priceAtBooking;
         $deposit = $this->calculateDeposit($totalPrice);
 
-        $Payments = Auth::user()->payments;
-        $renterCardNumbers = $Payments->pluck('cardNumber');
+
+        $renterCardNumbers = $this->getRenterCardsNumber($booking->apartment_id);
 
 
         $ownerCardsNumber = $this->getOwnerCardsNumber($booking->apartment_id);

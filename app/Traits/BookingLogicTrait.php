@@ -198,10 +198,39 @@ trait BookingLogicTrait
             return null;
         }
         $ownerPayments = $owner->payments;
-        //  $ownerCardsNumber = $ownerPayments->pluck('cardNumber');
+
         $ownerCardsNumber = $ownerPayments->pluck('cardNumber')->toArray();
         return $ownerCardsNumber;
     }
+
+
+    //helper
+    public function getApartmentRenter($apartmentId): ?User
+    {
+        $renterBooking = Booking::where('apartment_id', $apartmentId)
+            ->where('enType', 'Renter')
+            ->first();
+
+        if (!$renterBooking) {
+            return null;
+        }
+
+        return $renterBooking->user;
+    }
+
+    public function getRenterCardsNumber($apartmentId) //: ?string لا تعمل هيك مهما كلف الثمن 
+    {
+        $renter = $this->getApartmentRenter($apartmentId);
+
+        if (!$renter) {
+            return null;
+        }
+        $renterPayments = $renter->payments;
+
+        $renterCardsNumber = $renterPayments->pluck('cardNumber')->toArray();
+        return $renterCardsNumber;
+    }
+
 
     public function warn_ondelete($ban_count, $ban_count_ondelete)
     {
@@ -252,5 +281,4 @@ trait BookingLogicTrait
         }
         return $ban_count;
     }
-    
 }
