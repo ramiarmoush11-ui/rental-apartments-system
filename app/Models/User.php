@@ -16,6 +16,8 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+                'banned_until' => 'datetime',
+
         'password' => 'hashed',
             'ban_reasons_history' => 'array',
     ];

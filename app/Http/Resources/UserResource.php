@@ -20,7 +20,7 @@ class UserResource extends JsonResource
             'isBanned'        => $this->isbanned ? __('resources.is_banned_yes') : __('resources.is_banned_no'),
             'banCount'        => $this->ban_count ?? 0,
             'banType'         => $this->ban_type ?? __('resources.no_active_ban'),
-            'bannedUntil'     => $this->banned_until?->format('Y-m-d') ?? __('resources.not_banned'),
+            'banned_until'     => $this->banned_until?->format('Y-m-d') ?? __('resources.not_banned'),
             'profile'         => $this->profile ? new ProfileResource($this->profile) : __('resources.profile_not_available'),
             'bookings'        => $this->bookings ? BookingResource::collection($this->bookings) : [],
             'payments'        => $this->payments ? PaymentResource::collection($this->payments) : [],
