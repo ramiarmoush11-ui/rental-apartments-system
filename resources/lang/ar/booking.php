@@ -134,5 +134,18 @@ return [
     'reject_reservation_refund_failed'  => 'فشل استرداد العربون عند رفض الحجز.',
     'reject_reservation_success'        => 'تم رفض الحجز بنجاح.',
 
+    /////////////////////////////////////////////////////update_reservation/////////////////////////////////////////////////////////////
+    'update_reservation_no_changes' => 'لم يتم إجراء أي تعديل، تواريخ الحجز لم تتغير.',
+    'update_reservation_not_found' => 'الحجز غير موجود.',
+    'update_reservation_forbidden_status' => 'لا يمكن تعديل هذا الحجز.',
+    'update_reservation_already_started' => 'لا يمكن تعديل حجز بدأ بالفعل.',
+    'update_reservation_no_changes' => 'لم يتم إجراء أي تعديل، تواريخ الحجز لم تتغير.',
+    'not_available_dates' => 'الشقة غير متاحة في الفترة المحددة.',
+    'update_reservation_extra_payment_failed' => 'فشل دفع فرق العربون، يرجى التحقق من معلومات البطاقة أو الرصيد.',
+    'update_reservation_refund_failed' => 'فشل إرجاع فرق العربون أثناء تعديل الحجز.',
+    'update_reservation_success' => 'تم تعديل الحجز بنجاح.',
+    'update_reservation_card_required' =>
+    'رقم البطاقة والرقم السري مطلوبان لدفع فرق العربون.',
+
 
 ];

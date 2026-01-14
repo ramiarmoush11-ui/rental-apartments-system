@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\offerApartmentRequest;
 use App\Http\Requests\PaymentRequest;
+use App\Http\Requests\UpdateReservationRequest;
 use App\Http\Resources\BookingResource;
 use App\Models\Apartment;
 use App\Models\Booking;
@@ -422,8 +423,6 @@ class BookingController extends Controller
         ], 200);
     }
 
-
-    //التقييم لازم يكون rate + comment 
     public function EvaluateApartment($apartmentId, Request $request)
     {
         $validated = $request->validate([
@@ -836,4 +835,148 @@ class BookingController extends Controller
             'message' => __('booking.final_payment_success')
         ], 200);
     }
+    //////
+    public function updateReservation(UpdateReservationRequest $request, $BookingId)
+    {
+        $validated = $request->validated();
+
+        $booking = Booking::where('id', $BookingId)
+            ->where('user_id', Auth::id())
+            ->where('enType', 'Renter')
+            ->first();
+
+        if (!$booking) {
+            return response()->json([
+                'message' => __('booking.update_reservation_not_found')
+            ], 404);
+        }
+
+        if (in_array($booking->enStatus, ['Cancelled', 'Accepted'])) {
+            return response()->json([
+                'message' => __('booking.update_reservation_forbidden_status')
+            ], 403);
+        }
+
+        if (now()->gte(Carbon::parse($booking->startTerm))) {
+            return response()->json([
+                'message' => __('booking.update_reservation_already_started')
+            ], 403);
+        }
+
+        if (
+            Carbon::parse($booking->startTerm)->isSameDay($validated['startTerm']) &&
+            Carbon::parse($booking->endTerm)->isSameDay($validated['endTerm'])
+        ) {
+            return response()->json([
+                'message' => __('booking.update_reservation_no_changes')
+            ], 422);
+        }
+        $apartment = $booking->apartment;
+
+
+        if (!$this->checkAvailability(
+            $validated['startTerm'],
+            $validated['endTerm'],
+            $apartment,
+            $booking->id
+        )) {
+            return response()->json([
+                'message' => __('booking.not_available_dates')
+            ], 409);
+        }
+
+
+        $oldTotal   = $this->TotalPriceReservation(
+            $booking->apartment_id,
+            $booking->startTerm,
+            $booking->endTerm,
+            $booking
+        );
+        $oldDeposit = $this->calculateDeposit($oldTotal);
+
+
+        $newTotal   = $this->TotalPriceReservation(
+            $booking->apartment_id,
+            $validated['startTerm'],
+            $validated['endTerm'],
+            $booking
+        );
+        $newDeposit = $this->calculateDeposit($newTotal);
+
+        $difference = $newDeposit - $oldDeposit;
+
+        $ownerCards   = $this->getOwnerCardsNumber($booking->apartment_id);
+        $renterCards  = Auth::user()->payments()->pluck('cardNumber');
+
+$cardNumber = $validated['cardNumber'] ?? null;
+$cvv        = $validated['cvv'] ?? null;
+
+        if ($difference > 0) {
+            if (!$cardNumber || !$cvv) {
+                return response()->json([
+                    'message' => __('booking.update_reservation_card_required')
+                ], 422);
+            }
+            if (!$this->cardStatus($cardNumber, $difference, $cvv)) {
+                return response()->json([
+                    'message' => __('booking.update_reservation_extra_payment_failed')
+                ], 402);
+            }
+
+            if (!$this->payMoney($ownerCards, $cardNumber, $difference)) {
+                return response()->json([
+                    'message' => __('booking.update_reservation_extra_payment_failed')
+                ], 503);
+            }
+
+            Payment::create([
+                'user_id'    => Auth::id(),
+                'booking_id' => $booking->id,
+                'amount'     => $difference,
+                'cardNumber' => $cardNumber,
+            ]);
+        }
+
+
+        if ($difference < 0) {
+            $refundAmountMoney = ($difference) * -1;
+
+            if (!$this->refundMoney($ownerCards, $renterCards, $refundAmountMoney)) {
+                return response()->json([
+                    'message' => __('booking.update_reservation_refund_failed')
+                ], 500);
+            }
+        }
+
+
+        $booking->update([
+            'startTerm' => $validated['startTerm'],
+            'endTerm'   => $validated['endTerm'],
+            'enStatus'  => 'Pending',
+        ]);
+
+
+        $owner = $this->getApartmentOwner($booking->apartment_id);
+        Notification::create([
+            'user_id' => $owner->id,
+            'type'    => 'reservation_updated',
+            'data'    => [
+                'apartment_id' => $booking->apartment_id,
+                'booking_id'   => $booking->id,
+                'startTerm'    => $validated['startTerm'],
+                'endTerm'      => $validated['endTerm'],
+            ],
+        ]);
+
+        return response()->json([
+            'message' => __('booking.update_reservation_success'),
+            'data'    => new BookingResource($booking)
+        ], 200);
+    }
+
+
+
+
+
+    ////////
 }

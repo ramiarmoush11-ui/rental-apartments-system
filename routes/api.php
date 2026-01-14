@@ -98,10 +98,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/renter/active', 'showActiveAcceptedReservationsRenter');
             Route::get('/renter/history', 'showCancelledAndFinishedReservationsRenter');
             Route::post('/{apartmentId}/offer', 'offerApartment')->middleware(['notbanned', 'verifiedAccount']);
+            Route::put('/update/reservations/{bookingId}', 'updateReservation')->middleware(['notbanned', 'verifiedAccount']);
             Route::post('/reservations/{BookingId}/final-payment', 'finalprocessPayment')->middleware(['notbanned', 'verifiedAccount']);
             Route::get('/reservations/awaiting-payment', 'showReservationsAwaitingPayment')->middleware('notbanned');
             Route::post('/{apartmentId}/evaluate', 'EvaluateApartment')->middleware(['notbanned', 'verifiedAccount']);
             Route::post('/reservations/{apartmentUserId}/cancel', 'userCancelReservation')->middleware(['notbanned', 'verifiedAccount']); //
+            
         });
     });
 });

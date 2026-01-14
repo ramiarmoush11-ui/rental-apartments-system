@@ -98,16 +98,19 @@ trait BookingLogicTrait
         return true;
     }
     //helper
-    public function checkAvailability(string $start, string $end, Apartment $apartment): bool
+    public function checkAvailability(string $start, string $end, Apartment $apartment, int $exclusion = null): bool
     {
         $start_date = Carbon::parse($start)->startOfDay();
         $end_date   = Carbon::parse($end)->endOfDay();
 
-        $bookings = Booking::where('apartment_id', $apartment->id)
-            ->whereIn('enStatus', ['Accepted', 'Pending', 'AwaitingPayment'])
-            ->orderBy('startTerm', 'asc')
-            ->get();
 
+        $query = Booking::where('apartment_id', $apartment->id)
+            ->whereIn('enStatus', ['Accepted', 'Pending', 'AwaitingPayment']);
+
+        if ($exclusion !== null) {
+            $query->where('id', '!=', $exclusion);
+        }
+        $bookings = $query->orderBy('startTerm', 'asc')->get();
         if ($bookings->isEmpty()) {
             return true;
         }

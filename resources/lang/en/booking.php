@@ -132,7 +132,21 @@ return [
     'reject_reservation_unauthorized'   => 'You are not authorized to reject this reservation.',
     'reject_reservation_refund_failed'  => 'Failed to refund the deposit when rejecting the reservation.',
     'reject_reservation_success'        => 'The reservation has been rejected successfully.',
+    /////////////////////////////////////////////////////update_reservation/////////////////////////////////////////////////////////////
 
+    'update_reservation_no_changes' => 'No changes detected. Reservation dates are the same.',
+    'update_reservation_not_found' =>
+    'Reservation not found.',
+
+    'update_reservation_forbidden_status' => 'This reservation cannot be modified.',
+    'update_reservation_already_started' => 'You cannot modify a reservation that has already started.',
+    'update_reservation_no_changes' => 'No changes detected. Reservation dates are the same.',
+    'not_available_dates' => 'The apartment is not available for the selected dates.',
+    'update_reservation_extra_payment_failed' => 'Additional payment failed. Please check your card details or balance.',
+    'update_reservation_refund_failed' => 'Refund failed while updating the reservation.',
+    'update_reservation_success' => 'Reservation updated successfully.',
+    'update_reservation_card_required' =>
+    'Card number and CVV are required to pay the additional deposit.',
 
 
 ];
