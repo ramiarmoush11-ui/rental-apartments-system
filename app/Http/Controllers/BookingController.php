@@ -10,6 +10,7 @@ use App\Models\Apartment;
 use App\Models\Booking;
 use App\Models\Notification;
 use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Traits\PaymentProcessingTrait;
 use App\Traits\BookingLogicTrait;
@@ -528,7 +529,7 @@ class BookingController extends Controller
 
     public function rejectReservation($BookingId)
     {
-        $booking = Booking::where('id', $BookingId)->first();
+        $booking = Booking::where('id', $BookingId)->where('enStatus', 'Pending')->first();
 
         if (!$booking) {
             return response()->json([
@@ -549,8 +550,10 @@ class BookingController extends Controller
         $deposit = $this->calculateDeposit($totalPrice);
 
 
-        $renterCardNumbers = $this->getRenterCardsNumber($booking->apartment_id);
-
+        //$renterCardNumbers = $this->getRenterCardsNumber($booking->apartment_id);
+        $renterT = User::where('id',$booking->user_id)->first();
+        $renterCardNumbers=$renterT->payments->pluck('cardNumber');
+        
 
         $ownerCardsNumber = $this->getOwnerCardsNumber($booking->apartment_id);
 
@@ -908,8 +911,8 @@ class BookingController extends Controller
         $ownerCards   = $this->getOwnerCardsNumber($booking->apartment_id);
         $renterCards  = Auth::user()->payments()->pluck('cardNumber');
 
-$cardNumber = $validated['cardNumber'] ?? null;
-$cvv        = $validated['cvv'] ?? null;
+        $cardNumber = $validated['cardNumber'] ?? null;
+        $cvv        = $validated['cvv'] ?? null;
 
         if ($difference > 0) {
             if (!$cardNumber || !$cvv) {
