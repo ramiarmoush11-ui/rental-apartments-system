@@ -142,7 +142,7 @@ class ApartmentController extends Controller
     //owner
     public function delete($apartmentId, Request $request)
     {
-        $delete_verified = $request->boolean('delete_verified');
+        //$delete_verified = $request->boolean('delete_verified');
         $apartmentOwner = Booking::where('user_id', Auth::id())
             ->where('apartment_id', $apartmentId)->where('enType', 'Owner')->first();
         if (!$apartmentOwner) {
@@ -151,9 +151,9 @@ class ApartmentController extends Controller
             ], 403);
         }
         $ban_count = Auth::user()->ban_count;
-        if ((!$delete_verified) && (($this->ban_count_ondelete($apartmentId)) >= 1)) {
+       /* if ( (($this->ban_count_ondelete($apartmentId)) >= 1)) {
             return $this->warn_ondelete($ban_count, $this->ban_count_ondelete($apartmentId));
-        }
+        }*/
 
         if (!$this->ConflictCheck($apartmentId)) {
             return response()->json([
