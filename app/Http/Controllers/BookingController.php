@@ -182,7 +182,7 @@ class BookingController extends Controller
             return response()->json([
                 'message' => __('booking.show_all_reservations_empty'),
                 'data' => null
-            ], 404);
+            ], 200);
         }
 
         return response()->json([
@@ -211,7 +211,7 @@ class BookingController extends Controller
             return response()->json([
                 'message' => __('booking.show_all_pending_reservations_empty'),
                 'data' => null
-            ], 404);
+            ], 200);
         }
 
         return response()->json([

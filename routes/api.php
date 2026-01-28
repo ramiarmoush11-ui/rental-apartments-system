@@ -41,8 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
     |-------------------- Profile --------------------
     */
     Route::prefix('profile')->controller(ProfileController::class)->group(function () {
-        Route::post('/', 'store');
-        Route::post('/', 'update')->middleware('notbanned');
+        Route::post('/store', 'store');
+        Route::post('/update', 'update')->middleware('notbanned');
         Route::get('/', 'show');
     });
 
